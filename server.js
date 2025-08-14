@@ -13,7 +13,10 @@ app.use(cors());
 app.use(express.json());
 
 
-
+// default route to check
+app.use('/', (req, res) => {
+  res.json({message:'Welcome to Phlebotomist Microservice',timestamp: new Date().toISOString(),});
+});
 
 // All Routes Define here
 app.use('/phelb',verifyToken,role("phlebotomist"),PatientRoutes);
