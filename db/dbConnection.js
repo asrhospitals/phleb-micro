@@ -8,7 +8,8 @@ const {Sequelize} = require('sequelize');
 //  });
 
 
-// Connect to remote database
+// Connect to Production Database
+
  const sequelize = new Sequelize('labdb', 'labuser', 'labpassword', {
    host: '213.210.37.3',
    dialect: 'postgres',
