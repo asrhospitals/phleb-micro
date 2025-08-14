@@ -1,0 +1,23 @@
+const { DataTypes } = require("sequelize");
+const sequelize = require("../../db/dbConnection");
+
+const PPModeTest = sequelize.define(
+  "ppmode",
+  {
+    id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    pop: { type: DataTypes.STRING },
+    popno: { type: DataTypes.INTEGER, unique: true },
+    pipno: { type: DataTypes.INTEGER, unique: true },
+    pscheme: { type: DataTypes.STRING },
+    refdoc: { type: DataTypes.STRING },
+    pbarcode: { type: DataTypes.INTEGER, allowNull: false, unique: true },
+    trfno: { type: DataTypes.INTEGER, allowNull: false, unique: true },
+    remark: { type: DataTypes.STRING, allowNull: false },
+    attatchfile: { type: DataTypes.STRING, allowNull: false },
+    patient_id: { type: DataTypes.INTEGER, allowNull: false },
+    hospitalid: { type: DataTypes.INTEGER, allowNull: false },
+  },
+  { timestamps: false }
+);
+
+module.exports = PPModeTest;
