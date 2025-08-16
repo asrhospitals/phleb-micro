@@ -21,6 +21,10 @@ app.use('/phelb',verifyToken,role("phlebotomist"),PatientRoutes);
 // Common Image Uploder
 app.use('/trf/upload',UploaTRF);
 
+// default route to check
+app.use('/', (req, res) => {
+  res.json({message:'Welcome to Phlebotomist Microservice',timestamp: new Date().toISOString(),});
+});
 
 const server = async () => {
   try {
