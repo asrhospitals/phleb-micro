@@ -9,7 +9,7 @@ const {
 } = require("../model/associationModels/associations");
 const { Op } = require("sequelize");
 
-// 1. Create Patient Test Along with Patient Registration
+// A. Create Patient Test Along with Patient Registration
 const addPatientTest = async (req, res) => {
   try {
     // 1. Check if the user is authenticated and has a hospitalid
@@ -170,7 +170,7 @@ const addPatientTest = async (req, res) => {
   }
 };
 
-///B. Get All Patient Tests along with Patient details and Hospital name
+// B. Get All Patient Tests along with Patient details and Hospital name
 
 const getPatientTest = async (req, res) => {
   try {
@@ -306,7 +306,7 @@ const getPatientTest = async (req, res) => {
   }
 };
 
-/// D. Update Patient Deatails by Patient ID
+// D. Update Patient Deatails by Patient ID
 const updatePatient = async (req, res) => {
   try {
     const { patient_id } = req.params;
@@ -351,9 +351,36 @@ const updateTestStatus = async (req, res) => {
   }
 };
 
+// F. Get Tests By Test Codes
+
+const getShortCode=async (req,res) => {
+  try {
+    const { short_codes } = req.body;
+
+    if (!Array.isArray(short_codes) || short_codes.length === 0) {
+      return res.status(400).json({ message: "Invalid test shortcodes" });
+    }
+
+    const tests = await Investigation.findAll({
+      where: {
+        shortcode: short_codes,
+      },
+    });
+     if (tests.length === 0) {
+      return res.status(404).json({ message: "No matching tests found" });
+    }
+
+    res.status(200).json(tests);
+  } catch (error) {
+    res.status(500).json({ message: `Something went wrong ${error}` });
+  }
+  
+}
+
 module.exports = {
   addPatientTest,
   getPatientTest,
   updatePatient,
   updateTestStatus,
+  getShortCode,
 };

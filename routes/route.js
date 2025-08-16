@@ -4,6 +4,7 @@ const {
   getPatientTest,
   updateTestStatus,
   updatePatient,
+  getShortCode,
 } = require("../controller/patientController");
 const {
   createPatient,
@@ -28,5 +29,10 @@ router.route("/update-patient-infographic/:patient_id").put(updatePatient);
 
 // 6. Send Test to Respective Node
 router.route("/send-tests").put(updateTestStatus);
+
+// 7. Get Short Code
+router.route("/get-shortcodes").get(getShortCode);
+
+// 8. Search Api
 
 module.exports = router;
