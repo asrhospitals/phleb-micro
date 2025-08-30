@@ -31,9 +31,15 @@ const OPBill = sequelize.define(
     pamtmthd: {
       type: DataTypes.ENUM,
       values: ["Cash", "Credit", "DD", "Cheque", "UPI", "NEFT"],
+      defaultValue: "Cash"
     },
     pnote: {
       type: DataTypes.STRING,
+    },
+    billstatus: {
+      type: DataTypes.ENUM,
+      values: ["Paid", "Unpaid", "Pending"],
+      defaultValue: "Pending"
     },
     patient_id: {
       type: DataTypes.INTEGER,

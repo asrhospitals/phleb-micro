@@ -13,20 +13,11 @@ Patient.hasMany(PatientTest, { foreignKey: "patient_id", as: "patientTests" });
 PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
 // ✅ Investigation ↔ PatientTest
-Investigation.hasMany(PatientTest, {
-  foreignKey: "investigation_id",
-  as: "investigationTests",
-});
-PatientTest.belongsTo(Investigation, {
-  foreignKey: "investigation_id",
-  as: "investigation",
-});
+Investigation.hasMany(PatientTest, {foreignKey: "investigation_id",as: "investigationTests",});
+PatientTest.belongsTo(Investigation, {foreignKey: "investigation_id",as: "investigation",});
 
 // ✅ Hospital ↔ PatientTest
-Hospital.hasMany(PatientTest, {
-  foreignKey: "hospitalid",
-  as: "hospitalTests",
-});
+Hospital.hasMany(PatientTest, {foreignKey: "hospitalid", as: "hospitalTests"});
 PatientTest.belongsTo(Hospital, { foreignKey: "hospitalid", as: "hospital" });
 
 // ✅ Patient ↔ Bill
@@ -46,20 +37,16 @@ Hospital.hasMany(PPPMode, { foreignKey: "hospitalid", as: "hospitalPPModes" });
 PPPMode.belongsTo(Hospital, { foreignKey: "hospitalid", as: "hospital" });
 
 // ✅ Patient - Investigation many-to-many via PatientTest
-Patient.belongsToMany(Investigation, {
-  through: PatientTest,
-  foreignKey: "patient_id",
-  otherKey: "id",
-});
-Investigation.belongsToMany(Patient, {
-  through: PatientTest,
-  foreignKey: "id",
-  otherKey: "patient_id",
-});
+Patient.belongsToMany(Investigation, {through: PatientTest,foreignKey: "patient_id",otherKey: "id",});
+Investigation.belongsToMany(Patient, {through: PatientTest,foreignKey: "id",otherKey: "patient_id",});
 
 // ✅ Patient ↔ ABHA
 Patient.hasMany(ABHA, { foreignKey: "patient_id", as: "patientAbhas" });
 ABHA.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
+
+// Patient ↔ Hospital
+Patient.belongsTo(Hospital, { foreignKey: "hospitalid", as: "hospital" });
+Hospital.hasMany(Patient, { foreignKey: "hospitalid", as: "patients" });
 
 module.exports = {
   Patient,

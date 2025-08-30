@@ -8,7 +8,7 @@ const ABHA = sequelize.define(
     isaadhar: { type: DataTypes.BOOLEAN },
     ismobile: { type: DataTypes.BOOLEAN },
     aadhar: { type: DataTypes.BIGINT,unique:true },
-    mobile: { type: DataTypes.INTEGER },
+    mobile: { type: DataTypes.BIGINT,validate: { isNumeric: true, len: [10] } },
     abha: { type: DataTypes.BIGINT,unique:true },
     patient_id: {
       type: DataTypes.INTEGER,

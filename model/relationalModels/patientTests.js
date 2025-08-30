@@ -53,7 +53,8 @@ hospitalid: {
     type: DataTypes.STRING,
   },
   status: {
-    type: DataTypes.ENUM(
+    type: DataTypes.ENUM( 
+      "collected",  
       "node",
       "center",
       "motherlab",
@@ -64,7 +65,10 @@ hospitalid: {
       "redo",
       "reject",
       "recollect",
-      "docpending"
+      "docpending",
+      "completed",
+      "inprogress",
+      "delivered"
     ),
     allowNull: false,
     defaultValue: "center",

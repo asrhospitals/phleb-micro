@@ -1,7 +1,7 @@
 const Router = require("express");
 const { updateTestStatus } = require("../controller/updateTestStatus");
 const { addPatient } = require("../controller/addPatient");
-const { getPatient } = require("../controller/getPatient");
+const { getPatient, fetchPatient, searchPatient } = require("../controller/getPatient");
 const { updatePatientInfo } = require("../controller/updatePatient");
 const { getShortCodes } = require("../controller/getTestCode");
 
@@ -22,6 +22,10 @@ router.route("/send-tests").put(updateTestStatus);
 // 5. Get Short Code
 router.route("/get-shortcodes").get(getShortCodes);
 
-// 6. Search Api
+// 6. Get General Patient Info
+router.route('/get-info/:hospitalname').get(fetchPatient);
+
+// 7. Search Patient Data
+router.route("/search-patient").get(searchPatient);
 
 module.exports = router;

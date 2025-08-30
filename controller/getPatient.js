@@ -7,12 +7,23 @@ const {
   PPPMode,
   ABHA,
 } = require("../model/associationModels/associations");
+const { Op } = require("sequelize");
 
 
-// 1. Get Patient Data
+// 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
 
 const getPatient = async (req, res) => {
   try {
+    /* 1. Authorization */
+    const { role } = req.user || {};
+    if (role?.toLowerCase() !== "phlebotomist") {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only phlebotomists can access this resource.",
+        });
+    }
 
     // Check if the user is authenticated and has a hospitalid
     const { hospitalid } = req.user;
@@ -68,12 +79,34 @@ const getPatient = async (req, res) => {
             {
               model: OPBill,
               as: "patientBills",
-              attributes: ["id", "ptotal", "pamt", "pamtmode", "pamtmthd"],
+              attributes: [
+                "id",
+                "ptotal",
+                "pdisc",
+                "pamt",
+                "pamtrcv",
+                "pamtdue",
+                "pamtmode",
+                "pamtmthd",
+                "billstatus",
+                "pnote",
+              ],
             },
             {
               model: PPPMode,
               as: "patientPPModes",
-              attributes: ["id", "pscheme", "refdoc", "remark", "attatchfile"],
+              attributes: [
+                "id",
+                "pscheme",
+                "refdoc",
+                "remark",
+                "attatchfile",
+                "pbarcode",
+                "trfno",
+                "pop",
+                "popno",
+                "pipno",
+              ],
             },
           ],
         },
@@ -89,34 +122,6 @@ const getPatient = async (req, res) => {
         },
       ],
     });
-
-    // Check if there is no Test + ABHA + OpBill + PP Data Not added to a Patient
-    if (
-      !patientTests ||
-      patientTests.length === 0 ||
-      patientTests[0].patient.patientPPModes.length === 0 ||
-      patientTests[0].patient.patientAbhas.length === 0
-    ) {
-
-      // Simply Return the Patient Information
-      const patients = await Patient.findAll({
-        where: {
-          hospitalid: hospital.id,
-          pregdate: currentDate,
-        },
-        attributes: [
-          "id",
-          "pname",
-          "page",
-          "pgender",
-          "pregdate",
-          "pmobile",
-          "registration_status",
-        ],
-      });
-
-      return res.status(200).json(patients);
-    }
 
     // Else Group All Patient Informaion with Test + Bills + Abha + PP Data
     const groupedByPatient = {};
@@ -159,13 +164,170 @@ const getPatient = async (req, res) => {
 
     res.status(200).json(groupedResults);
   } catch (err) {
-    res.status(500).json({
-      message:
-        err.message || "Something went wrong while fetching patient tests.",
+    return res.status(500).json({
+      message: `Something went wrong while fetching patients ${err}`,
+    });
+  }
+};
+
+// 2. Get General Patient Data arrange by current date
+
+const fetchPatient = async (req, res) => {
+  try {
+    /* 1. Authorization */
+    const { role } = req.user || {};
+    if (role?.toLowerCase() !== "phlebotomist") {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only phlebotomists can access this resource.",
+        });
+    }
+
+    // Check User Id or Hospital Id
+    const { hospitalid } = req.user;
+
+    // Filter By hospital Name
+    const { hospitalname } = req.params;
+
+    // Find Hospital Information
+    const hospital = await Hospital.findOne({
+      where: { id: hospitalid, hospitalname: hospitalname },
+    });
+
+    // Check Hospital Validity
+    if (
+      !hospital ||
+      hospital.hospitalname !== hospitalname ||
+      hospitalid !== hospital.id
+    ) {
+      return res.status(404).json({
+        message: "Hospital not found",
+      });
+    }
+
+    // Get current date in 'YYYY-MM-DD' format
+    const currentDate = new Date()
+      .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
+      .split(",")[0];
+
+    // Get Patient Data by Hospital ID
+    // Simply Return the Patient Information
+    const patients = await Patient.findAll({
+      where: { pregdate: currentDate },
+      attributes: [
+        "id",
+        "pname",
+        "page",
+        "pgender",
+        "pregdate",
+        "pmobile",
+        "registration_status",
+      ],
+      include: [
+        {
+          model: Hospital,
+          as: "hospital",
+          attributes: ["hospitalname"],
+          where: { hospitalname: hospital.hospitalname },
+        },
+      ],
+    });
+
+    return res.status(200).json(patients);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Something went wrong while fetching patients ${error}`,
+    });
+  }
+};
+
+// 3. Search Patient Details
+const searchPatient = async (req, res) => {
+  try {
+    /* 1. Authorization */
+    const { role } = req.user || {};
+    if (role?.toLowerCase() !== "phlebotomist") {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Access denied. Only phlebotomists can access this resource.",
+        });
+    }
+
+    /* 2. Query Parameters */
+    const { department, refdoc, pbarcode, billstatus } = req.query;
+    const filters = {};
+    if (department) {
+      filters["$investigation.department$"] = department;
+    }
+    if (refdoc) {
+      filters["$patient.patientPPModes.refdoc$"] = {
+        [Op.iLike]: `%${refdoc}%`,
+      };
+    }
+    if (pbarcode) {
+      filters["$patient.patientPPModes.pbarcode$"] = pbarcode;
+    }
+    if (billstatus) {
+      filters["$patient.patientBills.billstatus$"] = billstatus;
+    }
+
+    /* Find Patients Matching the Query */
+  const patients = await PatientTest.findAll({
+      where: filters,
+      include: [
+        {
+          model: Patient,
+          as: "patient",
+          attributes: [
+            "id", "pname", "page", "pgender", "pregdate", "pmobile", "registration_status"
+          ],
+          include: [
+            {
+              model: ABHA,
+              as: "patientAbhas",
+              attributes: ["id", "isaadhar", "ismobile", "aadhar", "mobile", "abha"]
+            },
+            {
+              model: OPBill,
+              as: "patientBills",
+              attributes: ["id", "ptotal", "pdisc", "pamt", "pamtrcv", "pamtdue", "pamtmode", "pamtmthd", "billstatus", "pnote"]
+            },
+            {
+              model: PPPMode,
+              as: "patientPPModes",
+              attributes: ["id", "pscheme", "refdoc", "remark", "attatchfile", "pbarcode", "trfno", "pop", "popno", "pipno"]
+            }
+          ]
+        },
+        {
+          model: Investigation,
+          as: "investigation",
+          attributes: ["id", "testname", "department"]
+        },
+        {
+          model: Hospital,
+          as: "hospital",
+          attributes: ["hospitalname"]
+        }
+      ]
+    });
+
+
+
+    return res.status(200).json(patients);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Something went wrong while searching patients ${error}`,
     });
   }
 };
 
 module.exports = {
   getPatient,
+  fetchPatient,
+  searchPatient,
 };
