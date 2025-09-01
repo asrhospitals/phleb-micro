@@ -54,7 +54,6 @@ app.get("/health", async (req, res) => {
 });
 
 
-
 // Default route
 app.get("/", (req, res) => {
   res.json({
