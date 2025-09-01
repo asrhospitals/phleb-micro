@@ -25,7 +25,7 @@ investigation_id: {
     key: 'id'
   }
 },
-hospitalid: {
+hospital_id: {
   type: DataTypes.INTEGER,
   references: {
     model: Hospital,

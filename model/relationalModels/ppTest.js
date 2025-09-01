@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 
 const PPModeTest = sequelize.define(
-  "ppmode",
+  "patient_ppp",
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     pop: { type: DataTypes.STRING },
@@ -15,7 +15,6 @@ const PPModeTest = sequelize.define(
     remark: { type: DataTypes.STRING, allowNull: false },
     attatchfile: { type: DataTypes.STRING, allowNull: false },
     patient_id: { type: DataTypes.INTEGER, allowNull: false },
-    hospitalid: { type: DataTypes.INTEGER, allowNull: false },
   },
   { timestamps: false }
 );

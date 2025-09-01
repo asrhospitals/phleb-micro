@@ -15,7 +15,7 @@ const { Op } = require("sequelize");
 const getPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user || {};
+    const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
       return res
         .status(403)
@@ -26,7 +26,7 @@ const getPatient = async (req, res) => {
     }
 
     // Check if the user is authenticated and has a hospitalid
-    const { hospitalid } = req.user;
+    const { hospital_id } = req.user;
 
     // Filter Details By hospital Name
     const { hospitalname } = req.params;
@@ -38,7 +38,7 @@ const getPatient = async (req, res) => {
 
     // Check Hospital Details by Name
     const hospital = await Hospital.findOne({
-      where: { id: hospitalid, hospitalname: hospitalname },
+      where: { id: hospital_id, hospitalname: hospitalname },
     });
 
     if (!hospital) {
@@ -47,21 +47,21 @@ const getPatient = async (req, res) => {
 
     // Get all Patient Data with Tests + Bills + Abha + PP Data by Hospital ID and Current Date
     const patientTests = await PatientTest.findAll({
-      where: { hospitalid: hospital.id },
+      where: { hospital_id: hospital.id },
       include: [
         {
           model: Patient,
           as: "patient",
           attributes: [
             "id",
-            "pname",
-            "page",
-            "pgender",
-            "pregdate",
-            "pmobile",
+            "p_name",
+            "p_age",
+            "p_gender",
+            "p_regdate",
+            "p_mobile",
             "registration_status",
           ],
-          where: { pregdate: currentDate },
+          where: { p_regdate: currentDate },
 
           include: [
             {
@@ -133,12 +133,12 @@ const getPatient = async (req, res) => {
       if (!groupedByPatient[patientId]) {
         groupedByPatient[patientId] = {
           patient_id: patientId,
-          pname: plainTest.patient.pname,
-          page: plainTest.patient.page,
-          pregdate: plainTest.patient.pregdate,
-          mobile: plainTest.patient.pmobile,
+          p_name: plainTest.patient.p_name,
+          p_age: plainTest.patient.p_age,
+          p_regdate: plainTest.patient.p_regdate,
+          p_mobile: plainTest.patient.p_mobile,
           registration_status: plainTest.patient.registration_status,
-          pgender: plainTest.patient.pgender,
+          p_gender: plainTest.patient.p_gender,
           hospital_name: plainTest.hospital.hospitalname,
           tests: [],
           bills: plainTest.patient.patientBills || [],
@@ -175,7 +175,7 @@ const getPatient = async (req, res) => {
 const fetchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user || {};
+    const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
       return res
         .status(403)
@@ -186,21 +186,21 @@ const fetchPatient = async (req, res) => {
     }
 
     // Check User Id or Hospital Id
-    const { hospitalid } = req.user;
+    const { hospital_id } = req.user;
 
     // Filter By hospital Name
     const { hospitalname } = req.params;
 
     // Find Hospital Information
     const hospital = await Hospital.findOne({
-      where: { id: hospitalid, hospitalname: hospitalname },
+      where: { id: hospital_id, hospitalname: hospitalname },
     });
 
     // Check Hospital Validity
     if (
       !hospital ||
       hospital.hospitalname !== hospitalname ||
-      hospitalid !== hospital.id
+      hospital_id !== hospital.id
     ) {
       return res.status(404).json({
         message: "Hospital not found",
@@ -215,14 +215,14 @@ const fetchPatient = async (req, res) => {
     // Get Patient Data by Hospital ID
     // Simply Return the Patient Information
     const patients = await Patient.findAll({
-      where: { pregdate: currentDate },
+      where: { p_regdate: currentDate },
       attributes: [
         "id",
-        "pname",
-        "page",
-        "pgender",
-        "pregdate",
-        "pmobile",
+        "p_name",
+        "p_age",
+        "p_gender",
+        "p_regdate",
+        "p_mobile",
         "registration_status",
       ],
       include: [
@@ -247,7 +247,7 @@ const fetchPatient = async (req, res) => {
 const searchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user || {};
+    const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
       return res
         .status(403)
@@ -283,7 +283,7 @@ const searchPatient = async (req, res) => {
           model: Patient,
           as: "patient",
           attributes: [
-            "id", "pname", "page", "pgender", "pregdate", "pmobile", "registration_status"
+            "id", "p_name", "p_age", "p_gender", "p_regdate", "p_mobile", "registration_status"
           ],
           include: [
             {

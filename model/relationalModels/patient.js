@@ -1,7 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 const Hospital = require("../relationalModels/hospital");
-const User = require("../relationalModels/user");
 
 const Patient = sequelize.define(
   "patient",
@@ -11,77 +10,83 @@ const Patient = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
+    u_name:{
+      type:DataTypes.STRING
+    },
     country:{
       type:DataTypes.STRING,
     },
-    ref:{
+    ref_source:{
       type:DataTypes.STRING
     },
-    refdetails:{
+    ref_details:{
       type:DataTypes.STRING
     },
-    pmobile: {
+    p_mobile: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    pregdate: {
+    p_regdate: {
       type: DataTypes.DATEONLY,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    ptitle:{
+    p_title:{
       type:DataTypes.STRING,
       allowNull:false
     },
-    pname: {
+    p_name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    plname:{
+    p_lname:{
       type:DataTypes.STRING
     },
-    pgender: {
+    p_gender: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    page: {
+    p_age: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    pyears:{
+    p_years:{
       type:DataTypes.INTEGER
     },
-    pmonth:{
+    p_month:{
       type:DataTypes.INTEGER
     },
-    pdays:{
+    p_days:{
       type:DataTypes.INTEGER
     },
-    pblood:{
+    p_blood:{
       type:DataTypes.STRING
     },
-    pid:{
+    p_id:{
       type:DataTypes.STRING
     },
-    pidnum:{
+    p_idnum:{
       type:DataTypes.STRING
     },
-    pwhtsap: {
+    p_whtsap: {
       type: DataTypes.STRING,
     },
-    pemail: {
+    p_email: {
       type: DataTypes.STRING,
     },
-    pguardian: {
-      type: DataTypes.STRING,
-    },
-    pguardianmob:{
-      type:DataTypes.INTEGER
-    },
-    pguardadd:{
+    p_image:{
       type:DataTypes.STRING
     },
-    prltn:{
+    p_guardian: {
+      type: DataTypes.STRING,
+    },
+    p_guardianmob:{
+      type:DataTypes.INTEGER
+    },
+    p_guardadd:{
+      type:DataTypes.STRING
+    },
+    p_rltn:{
       type: DataTypes.STRING
     },
     street: {
@@ -96,9 +101,8 @@ const Patient = sequelize.define(
     },
     state: {
       type: DataTypes.STRING,
-      allowNull:false
     },
-    hospitalid: {
+    hospital_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -106,19 +110,15 @@ const Patient = sequelize.define(
         key: "id",
       },
     },
-    created_by: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: User,
-        key: "user_id",
-      },
-    },
     registration_status: {
-      type: DataTypes.ENUM("Center"),
+      type: DataTypes.ENUM("Pending", "Center", "Completed", "Verified", "Inactive"),
       allowNull: false,
       defaultValue: "Center",
     },
+    reg_id:{
+      type: DataTypes.STRING,
+      allowNull: false,
+    }
   },
   {
     timestamps: false,
@@ -128,8 +128,6 @@ const Patient = sequelize.define(
 
 
 
-Patient.belongsTo(User, { foreignKey: "created_by" });
-User.hasMany(Patient, { foreignKey: "created_by" });
 
 
 module.exports = Patient;

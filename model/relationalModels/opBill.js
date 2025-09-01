@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 
 const OPBill = sequelize.define(
-  "opbill",
+  "patient_op_bill",
   {
     id: {
       type: DataTypes.INTEGER,
@@ -45,10 +45,7 @@ const OPBill = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-    hospitalid: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
+
   },
   { timestamps: false }
 );

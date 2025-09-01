@@ -18,6 +18,7 @@ const Investigation = sequelize.define("investigation", {
   testname: {
     type: DataTypes.STRING,
     allowNull: false,
+    unique:true,
   },
   testcategory: {
     type: DataTypes.STRING,
@@ -28,6 +29,7 @@ const Investigation = sequelize.define("investigation", {
   },
   shortcode: {
     type: DataTypes.INTEGER,
+    unique:true
   },
   department: {
     type: DataTypes.STRING,
@@ -134,6 +136,25 @@ const Investigation = sequelize.define("investigation", {
   checkoutsrc: {
     type: DataTypes.BOOLEAN,
   },
+
+  // ------Accreditation
+
+  acreeditionname: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+  },
+  acreeditiondate: {
+    type: DataTypes.ARRAY(DataTypes.DATE),
+  },
+
+  // ----Lab Consumables
+
+  labconsumables: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+  },
+  consumableitems: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+  },
+
   //---Barcode & Timinng
   barcodelngt: {
     type: DataTypes.INTEGER,
@@ -175,6 +196,6 @@ const Investigation = sequelize.define("investigation", {
   remark: {
     type: DataTypes.STRING,
   },
-});
+},{timestamps:false});
 
 module.exports = Investigation;

@@ -9,89 +9,98 @@ const {
 } = require("../model/associationModels/associations");
 const { Op } = require("sequelize");
 const sequelize = require("../db/dbConnection");
+const {generateRegId}=require('../utils/idGenerator');
 
 // A. Create Patient Test Along with Patient Registration
 const addPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     // 1. Check if the user is authenticated and has a hospitalid
-    const { id: user_id, hospital_id } = req.user;
+    const { hospital_id } = req.user;
 
     // 2. Validate the Hospital Is available or not
 
     const hospital = await Hospital.findByPk(hospital_id);
+
     if (!hospital) {
       await transaction.rollback();
-      return res.status(200).json({ message: "Hospital not found." });
+      return res
+        .status(200)
+        .json({ message: `Hospital not found. ${hospital_id}` });
     }
 
-    // 3. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
+       // 3. Generate Registration ID and Visit ID
+     const reg_id = await generateRegId();
+
+    // 4. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
     const {
+      u_name,
       country,
-      ref,
-      refdetails,
-      pmobile,
-      pregdate,
-      ptitle,
-      pname,
-      plname,
-      pgender,
-      page,
-      pyears,
-      pmonth,
-      pdays,
-      pblood,
-      pid,
-      pidnum,
-      pemail,
-      pwhtsap,
-      pguardian,
-      pguardianmob,
-      pguardadd,
-      prltn,
+      ref_source,
+      ref_details,
+      p_mobile,
+      p_regdate,
+      p_title,
+      p_name,
+      p_lname,
+      p_gender,
+      p_age,
+      p_years,
+      p_month,
+      p_days,
+      p_blood,
+      p_id,
+      p_idnum,
+      p_email,
+      p_whtsap,
+      p_guardian,
+      p_guardianmob,
+      p_guardadd,
+      p_rltn,
       street,
       landmark,
       city,
       state,
-      attatchfile,
+      p_image,
       investigation_ids,
       opbill,
       pptest,
       abha,
     } = req.body;
 
-    // 4. Create Patient Registration within transaction
+    // 5. Create Patient Registration within transaction
     const createPatient = await Patient.create(
       {
+        u_name,
         country,
-        ref,
-        refdetails,
-        pmobile,
-        pregdate,
-        ptitle,
-        pname,
-        plname,
-        pgender,
-        page,
-        pyears,
-        pmonth,
-        pdays,
-        pblood,
-        pid,
-        pidnum,
-        pemail,
-        pwhtsap,
-        pguardian,
-        pguardianmob,
-        pguardadd,
-        prltn,
+        ref_source,
+        ref_details,
+        p_mobile,
+        p_regdate,
+        p_title,
+        p_name,
+        p_lname,
+        p_gender,
+        p_age,
+        p_years,
+        p_month,
+        p_days,
+        p_blood,
+        p_id,
+        p_idnum,
+        p_email,
+        p_whtsap,
+        p_guardian,
+        p_guardianmob,
+        p_guardadd,
+        p_rltn,
         street,
         landmark,
         city,
         state,
-        attatchfile,
-        hospitalid,
-        created_by: user_id,
+        p_image,
+        hospital_id,
+        reg_id
       },
       { transaction }
     );
@@ -143,7 +152,7 @@ const addPatient = async (req, res) => {
     const patienttests = investigation_ids.map((investigation_id) => ({
       patient_id,
       investigation_id,
-      hospitalid,
+      hospital_id,
       status: "center",
     }));
 
@@ -153,7 +162,6 @@ const addPatient = async (req, res) => {
     const billRecords = opbill.map((bill) => ({
       ...bill,
       patient_id,
-      hospitalid,
     }));
 
     await OPBill.bulkCreate(billRecords, { transaction });
@@ -162,7 +170,6 @@ const addPatient = async (req, res) => {
     const ppData = pptest.map((pp) => ({
       ...pp,
       patient_id,
-      hospitalid,
     }));
 
     await PPPMode.bulkCreate(ppData, { transaction });
@@ -170,7 +177,7 @@ const addPatient = async (req, res) => {
     // 10. Create ABHA records
     const abhaData = abha.map((ab) => ({
       ...ab,
-      patientid,
+      patient_id,
     }));
 
     await ABHA.bulkCreate(abhaData, { transaction });
@@ -179,15 +186,13 @@ const addPatient = async (req, res) => {
     await transaction.commit();
 
     return res.status(201).json({
-      message:
-        "Patient Details Created Successfully. Tests added. Bill Generated",
-      patient_id,
+      message: "Patient Details Created Successfully. Tests added. Bill added",
     });
   } catch (err) {
     // Rollback transaction on any error
     await transaction.rollback();
     res.status(500).send({
-      message: `Some error occurred while creating the patient test order: ${err.message}`,
+      message: `Some error occurred while creating the patient test order: ${err}`,
     });
   }
 };
