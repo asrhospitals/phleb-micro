@@ -115,9 +115,8 @@ const addPatient = async (req, res) => {
       opbill &&
       opbill.length &&
       pptest &&
-      pptest.length &&
-      abha &&
-      abha.length;
+      pptest.length;
+     
 
     if (!hasAdditionalData) {
       // Commit the transaction with just patient creation
@@ -148,7 +147,47 @@ const addPatient = async (req, res) => {
       });
     }
 
-    // 7. Create Patient Test Orders
+    // 7. Validate Existing barcodes,popno,pipno,trfno
+    const existingPPM = await PPPMode.findAll({
+      where: {
+        [Op.or]: [
+          { pbarcode: { [Op.in]: pptest.map((pp) => pp.pbarcode) } },
+          { popno: { [Op.in]: pptest.map((pp) => pp.popno) } },
+          { pipno: { [Op.in]: pptest.map((pp) => pp.pipno) } },
+          { trfno: { [Op.in]: pptest.map((pp) => pp.trfno) } },
+        ],
+      },
+      transaction,
+    });
+
+    if (existingPPM.length) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
+      });
+    }
+
+    // 8. Validate Abha Data
+    const existingABHA = await ABHA.findAll({
+      where: {
+        [Op.or]: [
+          { aadhar: { [Op.in]: abha.map((ab) => ab.aadhar) } },
+          { abha: { [Op.in]: abha.map((ab) => ab.abha) } },
+        ],
+      },
+      transaction,
+    });
+
+    if (existingABHA.length) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Some ABHA entries have duplicate fields",
+      });
+    }
+
+
+
+    // 9. Create Patient Test Orders
     const patienttests = investigation_ids.map((investigation_id) => ({
       patient_id,
       investigation_id,
@@ -158,7 +197,7 @@ const addPatient = async (req, res) => {
 
     await PatientTest.bulkCreate(patienttests, { transaction });
 
-    // 8. Create Bill Records
+    // 10. Create Bill Records
     const billRecords = opbill.map((bill) => ({
       ...bill,
       patient_id,
@@ -166,7 +205,7 @@ const addPatient = async (req, res) => {
 
     await OPBill.bulkCreate(billRecords, { transaction });
 
-    // 9. Create PPPMode records
+    // 11. Create PPPMode records
     const ppData = pptest.map((pp) => ({
       ...pp,
       patient_id,
@@ -174,7 +213,7 @@ const addPatient = async (req, res) => {
 
     await PPPMode.bulkCreate(ppData, { transaction });
 
-    // 10. Create ABHA records
+    // 12. Create ABHA records
     const abhaData = abha.map((ab) => ({
       ...ab,
       patient_id,

@@ -9,7 +9,6 @@ const {
 } = require("../model/associationModels/associations");
 const { Op } = require("sequelize");
 
-
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
 
 const getPatient = async (req, res) => {
@@ -17,12 +16,9 @@ const getPatient = async (req, res) => {
     /* 1. Authorization */
     const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Access denied. Only phlebotomists can access this resource.",
-        });
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
     }
 
     // Check if the user is authenticated and has a hospitalid
@@ -177,12 +173,9 @@ const fetchPatient = async (req, res) => {
     /* 1. Authorization */
     const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Access denied. Only phlebotomists can access this resource.",
-        });
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
     }
 
     // Check User Id or Hospital Id
@@ -249,16 +242,14 @@ const searchPatient = async (req, res) => {
     /* 1. Authorization */
     const { role } = req.user;
     if (role?.toLowerCase() !== "phlebotomist") {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Access denied. Only phlebotomists can access this resource.",
-        });
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
     }
 
     /* 2. Query Parameters */
-    const { department, refdoc, pbarcode, billstatus } = req.query;
+    const { department, refdoc, pbarcode, billstatus, startDate, endDate } =
+      req.query;
     const filters = {};
     if (department) {
       filters["$investigation.department$"] = department;
@@ -274,49 +265,85 @@ const searchPatient = async (req, res) => {
     if (billstatus) {
       filters["$patient.patientBills.billstatus$"] = billstatus;
     }
+    if (startDate && endDate) {
+      filters["$patient.p_regdate$"] = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
 
     /* Find Patients Matching the Query */
-  const patients = await PatientTest.findAll({
+    const patients = await Patient.findAll({
       where: filters,
+      order: [["id", "ASC"]],
+      attributes: [
+        "id",
+        "p_name",
+        "p_age",
+        "p_gender",
+        "p_regdate",
+        "p_mobile",
+        "registration_status",
+      ],
       include: [
         {
-          model: Patient,
-          as: "patient",
+          model: ABHA,
+          as: "patientAbhas",
           attributes: [
-            "id", "p_name", "p_age", "p_gender", "p_regdate", "p_mobile", "registration_status"
+            "id",
+            "isaadhar",
+            "ismobile",
+            "aadhar",
+            "mobile",
+            "abha",
           ],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "id",
+            "ptotal",
+            "pdisc",
+            "pamt",
+            "pamtrcv",
+            "pamtdue",
+            "pamtmode",
+            "pamtmthd",
+            "billstatus",
+            "pnote",
+          ],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "id",
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+            "pipno",
+          ],
+        },
+        {
+          model: PatientTest,
+          as: "patientTests",
+          required: false, // ← allows patients without tests
           include: [
             {
-              model: ABHA,
-              as: "patientAbhas",
-              attributes: ["id", "isaadhar", "ismobile", "aadhar", "mobile", "abha"]
+              model: Investigation,
+              as: "investigation",
+              attributes: ["id", "testname", "department"],
             },
-            {
-              model: OPBill,
-              as: "patientBills",
-              attributes: ["id", "ptotal", "pdisc", "pamt", "pamtrcv", "pamtdue", "pamtmode", "pamtmthd", "billstatus", "pnote"]
-            },
-            {
-              model: PPPMode,
-              as: "patientPPModes",
-              attributes: ["id", "pscheme", "refdoc", "remark", "attatchfile", "pbarcode", "trfno", "pop", "popno", "pipno"]
-            }
-          ]
+            { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+          ],
         },
-        {
-          model: Investigation,
-          as: "investigation",
-          attributes: ["id", "testname", "department"]
-        },
-        {
-          model: Hospital,
-          as: "hospital",
-          attributes: ["hospitalname"]
-        }
-      ]
+      ],
     });
-
-
 
     return res.status(200).json(patients);
   } catch (error) {
