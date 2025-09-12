@@ -6,6 +6,7 @@ const {
   OPBill,
   PPPMode,
   ABHA,
+  Department
 } = require("../model/associationModels/associations");
 const { Op } = require("sequelize");
 
@@ -15,14 +16,11 @@ const getPatient = async (req, res) => {
   try {
     /* 1. Authorization */
     const { role } = req.user;
-    if (role?.toLowerCase() !== "phlebotomist") {
+    if (role?.toLowerCase() !== "phlebotomist" && role?.toLowerCase() !== "admin") {
       return res.status(403).json({
-        message: "Access denied. Only phlebotomists can access this resource.",
+        message: "Access denied. Only phlebotomists and admins can access this resource.",
       });
     }
-
-    // Check if the user is authenticated and has a hospitalid
-    const { hospital_id } = req.user;
 
     // Filter Details By hospital Name
     const { hospitalname } = req.params;
@@ -34,16 +32,17 @@ const getPatient = async (req, res) => {
 
     // Check Hospital Details by Name
     const hospital = await Hospital.findOne({
-      where: { id: hospital_id, hospitalname: hospitalname },
+      where: { hospitalname: hospitalname },
     });
 
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });
     }
+    const hospital_id = hospital.id;
 
     // Get all Patient Data with Tests + Bills + Abha + PP Data by Hospital ID and Current Date
     const patientTests = await PatientTest.findAll({
-      where: { hospital_id: hospital.id },
+      where: { hospital_id },
       include: [
         {
           model: Patient,
@@ -101,7 +100,6 @@ const getPatient = async (req, res) => {
                 "trfno",
                 "pop",
                 "popno",
-                "pipno",
               ],
             },
           ],
@@ -109,7 +107,14 @@ const getPatient = async (req, res) => {
         {
           model: Investigation,
           as: "investigation",
-          attributes: ["id", "testname", "department"],
+          attributes: ["testname"],
+           include: [
+            {
+              model: Department, // Include the Department model
+              as: "department", // Use the correct alias
+              attributes: ["dptname"], // Get the department name
+            },
+          ],
         },
         {
           model: Hospital,

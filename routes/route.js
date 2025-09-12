@@ -1,14 +1,17 @@
 const Router = require("express");
 const { updateTestStatus } = require("../controller/updateTestStatus");
-const { addPatient } = require("../controller/addPatient");
+const { addPatient, createPatient } = require("../controller/addPatient");
 const { getPatient, fetchPatient, searchPatient } = require("../controller/getPatient");
 const { updatePatientInfo } = require("../controller/updatePatient");
 const { getShortCodes } = require("../controller/getTestCode");
 
 const router = Router();
 
-// 1. Add Patient With Tests
+// 1. Add Patient With Tests for Phlebotomist
 router.route("/add-patient-test").post(addPatient);
+
+// 2.  Add Patient Without Tests for Admin
+router.route("/create-patient/:hospitalname").post(createPatient);
 
 // 2. Get Patient Test Data
 router.route("/get-patient-test/:hospitalname").get(getPatient);

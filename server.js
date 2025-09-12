@@ -65,10 +65,14 @@ app.get("/", (req, res) => {
 });
 
 // All Routes Define here
-app.use("/phelb", verifyToken, role("phlebotomist"), PatientRoutes);
+// Routes For Patient Management
+// Only Phlebotomist can access these routes
+app.use("/api/v1/phelb", verifyToken, role("phlebotomist"), PatientRoutes);
+// Only Admin can access these routes
+app.use('/api/v2/phleb',verifyToken,role('admin'),PatientRoutes);
 // Common Image Uploder
-app.use("/trf/upload", verifyToken, role("phlebotomist"), UploadTRF);
-app.use("/profile/upload", verifyToken, role("phlebotomist"), UploadImage);
+app.use("/trf/upload", verifyToken, role("phlebotomist","admin"), UploadTRF);
+app.use("/profile/upload", verifyToken, role("phlebotomist","admin"), UploadImage);
 
 
 
