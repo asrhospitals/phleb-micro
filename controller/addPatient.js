@@ -238,12 +238,12 @@ const createPatient = async (req,res) => {
     const transaction = await sequelize.transaction();
   try {
     // 1. Add Hospital Name
-    const { hospitalname } = req.params;
+    const { id } = req.params;
 
     // 2. Validate the Hospital Is available or not
 
        const hospital = await Hospital.findOne({ 
-      where: { hospitalname: hospitalname } 
+      where: { id: id },   
     });
 
 
@@ -254,7 +254,7 @@ const createPatient = async (req,res) => {
     if (!hospital) {
       await transaction.rollback();
       return res.status(404).json({
-        message: `Hospital '${hospitalname}' not found. Please check the hospital name.`,
+        message: `Hospital with ID '${id}' not found. Please check the hospital ID.`,
       });
     }
 

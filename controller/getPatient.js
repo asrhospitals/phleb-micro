@@ -22,22 +22,26 @@ const getPatient = async (req, res) => {
       });
     }
 
-    // Filter Details By hospital Name
-    const { hospitalname } = req.params;
+    // Filter Details By hospital Id
+    const { id } = req.params;
 
     // Get current date in 'YYYY-MM-DD' format
     const currentDate = new Date()
       .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
       .split(",")[0];
 
-    // Check Hospital Details by Name
+    // Check Hospital Details by Hospital ID
+    // Validate the Hospital Is available or not
     const hospital = await Hospital.findOne({
-      where: { hospitalname: hospitalname },
+      where: { id: id || req.user.hospital_id },
     });
 
+    // Check Hospital Validity
     if (!hospital) {
       return res.status(404).json({ message: "Hospital not found" });
     }
+
+    // Get Hospital ID
     const hospital_id = hospital.id;
 
     // Get all Patient Data with Tests + Bills + Abha + PP Data by Hospital ID and Current Date
@@ -110,9 +114,9 @@ const getPatient = async (req, res) => {
           attributes: ["testname"],
            include: [
             {
-              model: Department, // Include the Department model
-              as: "department", // Use the correct alias
-              attributes: ["dptname"], // Get the department name
+              model: Department,
+              as: "department", 
+              attributes: ["dptname"],
             },
           ],
         },

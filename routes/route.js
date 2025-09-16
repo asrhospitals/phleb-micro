@@ -11,10 +11,10 @@ const router = Router();
 router.route("/add-patient-test").post(addPatient);
 
 // 2.  Add Patient Without Tests for Admin
-router.route("/create-patient/:hospitalname").post(createPatient);
+router.route("/create-patient/:id").post(createPatient);
 
 // 2. Get Patient Test Data
-router.route("/get-patient-test/:hospitalname").get(getPatient);
+router.route("/get-patient-test/:id").get(getPatient);
 
 // 3. Update Patient Infographic Data
 router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);
