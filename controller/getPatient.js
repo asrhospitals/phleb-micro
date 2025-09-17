@@ -401,6 +401,12 @@ const getPatientByMobile = async (req, res) => {
         "p_age",
         "p_gender",
         "p_regdate",
+        "p_lname",
+        "p_blood",
+        "p_whtsap",
+        "p_guardian",
+        "city",
+        "state",
       ],
       // include: [
       //   {
