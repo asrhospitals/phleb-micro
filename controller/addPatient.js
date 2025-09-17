@@ -234,29 +234,28 @@ const addPatient = async (req, res) => {
 
 // 2. Add Patient As Per Hospital for admin
 
-const createPatient = async (req,res) => {
-    const transaction = await sequelize.transaction();
+const createPatient = async (req, res) => {
+  const transaction = await sequelize.transaction();
   try {
-    // 1. Add Hospital Name
-    const { id } = req.params;
+    // // 1. Add Hospital Name
+    // const { id } = req.params;
 
-    // 2. Validate the Hospital Is available or not
+    // // 2. Validate the Hospital Is available or not
 
-       const hospital = await Hospital.findOne({ 
-      where: { id: id },   
-    });
+    //    const hospital = await Hospital.findOne({
+    //   where: { id: id },
+    // });
 
+    // // 3. Get Hospital Id
 
-    // 3. Get Hospital Id
- 
-    const hospital_id = hospital.id;
+    // const hospital_id = hospital.id;
 
-    if (!hospital) {
-      await transaction.rollback();
-      return res.status(404).json({
-        message: `Hospital with ID '${id}' not found. Please check the hospital ID.`,
-      });
-    }
+    // if (!hospital) {
+    //   await transaction.rollback();
+    //   return res.status(404).json({
+    //     message: `Hospital with ID '${id}' not found. Please check the hospital ID.`,
+    //   });
+    // }
 
     // 3. Generate Registration ID and Visit ID
     const reg_id = await generateRegId();
@@ -291,6 +290,7 @@ const createPatient = async (req,res) => {
       city,
       state,
       p_image,
+      hospital_id,
       investigation_ids,
       opbill,
       pptest,
@@ -463,5 +463,5 @@ const createPatient = async (req,res) => {
 
 module.exports = {
   addPatient,
-  createPatient
+  createPatient,
 };

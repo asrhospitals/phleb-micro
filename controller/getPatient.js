@@ -6,7 +6,7 @@ const {
   OPBill,
   PPPMode,
   ABHA,
-  Department
+  Department,
 } = require("../model/associationModels/associations");
 const { Op } = require("sequelize");
 
@@ -16,9 +16,13 @@ const getPatient = async (req, res) => {
   try {
     /* 1. Authorization */
     const { role } = req.user;
-    if (role?.toLowerCase() !== "phlebotomist" && role?.toLowerCase() !== "admin") {
+    if (
+      role?.toLowerCase() !== "phlebotomist" &&
+      role?.toLowerCase() !== "admin"
+    ) {
       return res.status(403).json({
-        message: "Access denied. Only phlebotomists and admins can access this resource.",
+        message:
+          "Access denied. Only phlebotomists and admins can access this resource.",
       });
     }
 
@@ -112,10 +116,10 @@ const getPatient = async (req, res) => {
           model: Investigation,
           as: "investigation",
           attributes: ["testname"],
-           include: [
+          include: [
             {
               model: Department,
-              as: "department", 
+              as: "department",
               attributes: ["dptname"],
             },
           ],
@@ -362,8 +366,114 @@ const searchPatient = async (req, res) => {
   }
 };
 
+// 4. Get Patient By Mobile Number
+const getPatientByMobile = async (req, res) => {
+  try {
+    /* 1. Authorization */
+    const { role } = req.user;
+    if (
+      role?.toLowerCase() !== "phlebotomist" &&
+      role?.toLowerCase() !== "admin"
+    ) {
+      return res.status(403).json({
+        message:
+          "Access denied. Only phlebotomists and admins can access this resource.",
+      });
+    }
+
+    /* 2. Query Parameters */
+    const { phone } = req.query;
+    const filters = {};
+
+    if (phone) {
+      filters["p_mobile"] = {
+        [Op.iLike]: `%${phone}%`,
+      };
+    }
+
+    /* Find Patients Matching the Query */
+    const patients = await Patient.findAll({
+      where: filters,
+      order: [["id", "ASC"]],
+      attributes: [
+        "id",
+        "p_name",
+        "p_age",
+        "p_gender",
+        "p_regdate",
+      ],
+      // include: [
+      //   {
+      //     model: ABHA,
+      //     as: "patientAbhas",
+      //     attributes: [
+      //       "id",
+      //       "isaadhar",
+      //       "ismobile",
+      //       "aadhar",
+      //       "mobile",
+      //       "abha",
+      //     ],
+      //   },
+      //   {
+      //     model: OPBill,
+      //     as: "patientBills",
+      //     attributes: [
+      //       "id",
+      //       "ptotal",
+      //       "pdisc",
+      //       "pamt",
+      //       "pamtrcv",
+      //       "pamtdue",
+      //       "pamtmode",
+      //       "pamtmthd",
+      //       "billstatus",
+      //       "pnote",
+      //     ],
+      //   },
+      //   {
+      //     model: PPPMode,
+      //     as: "patientPPModes",
+      //     attributes: [
+      //       "id",
+      //       "pscheme",
+      //       "refdoc",
+      //       "remark",
+      //       "attatchfile",
+      //       "pbarcode",
+      //       "trfno",
+      //       "pop",
+      //       "popno",
+      //       "pipno",
+      //     ],
+      //   },
+      //   {
+      //     model: PatientTest,
+      //     as: "patientTests",
+      //     required: false,
+      //     include: [
+      //       {
+      //         model: Investigation,
+      //         as: "investigation",
+      //         attributes: ["id", "testname", "department"],
+      //       },
+      //       { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      //     ],
+      //   },
+      // ],
+    });
+
+    return res.status(200).json(patients);
+  } catch (error) {
+    return res.status(500).json({
+      message: `Something went wrong while searching patients ${error}`,
+    });
+  }
+};
+
 module.exports = {
   getPatient,
   fetchPatient,
   searchPatient,
+  getPatientByMobile,
 };
