@@ -28,7 +28,7 @@ router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);
 router.route("/send-tests").put(updateTestStatus);
 
 // 6. Get General Patient Info
-router.route("/get-info/:hospitalname").get(fetchPatient);
+router.route("/get-info/:id").get(fetchPatient);
 
 // 7. Search Patient Data
 router.route("/search-patient").get(searchPatient);

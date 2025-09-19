@@ -195,26 +195,17 @@ const fetchPatient = async (req, res) => {
       });
     }
 
-    // Check User Id or Hospital Id
-    const { hospital_id } = req.user;
+    // Filter Details By hospital Id
+    const { id } = req.params;
 
-    // Filter By hospital Name
-    const { hospitalname } = req.params;
-
-    // Find Hospital Information
+    // Filter Details By hospital Id
     const hospital = await Hospital.findOne({
-      where: { id: hospital_id, hospitalname: hospitalname },
+      where: { id: id || req.user.hospital_id },
     });
 
     // Check Hospital Validity
-    if (
-      !hospital ||
-      hospital.hospitalname !== hospitalname ||
-      hospital_id !== hospital.id
-    ) {
-      return res.status(404).json({
-        message: "Hospital not found",
-      });
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found" });
     }
 
     // Get current date in 'YYYY-MM-DD' format
