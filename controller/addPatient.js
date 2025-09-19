@@ -237,7 +237,15 @@ const addPatient = async (req, res) => {
 const createPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-      // 1. Generate Registration ID and Visit ID
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (roleType?.toLowerCase() !== "admin") {
+      return res.status(403).json({
+        message: "Access denied. Only Admins can access this resource.",
+      });
+    }
+
+    // 1. Generate Registration ID and Visit ID
     const reg_id = await generateRegId();
 
     // 2. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode

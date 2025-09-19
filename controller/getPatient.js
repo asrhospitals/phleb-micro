@@ -15,10 +15,10 @@ const { Op } = require("sequelize");
 const getPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { roletype } = req.user;
+    const { roleType } = req.user;
     if (
-      roletype?.toLowerCase() !== "phlebotomist" &&
-      roletype?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
@@ -184,10 +184,10 @@ const getPatient = async (req, res) => {
 const fetchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { roletype } = req.user;
+    const { roleType } = req.user;
     if (
-      roletype?.toLowerCase() !== "phlebotomist" &&
-      roletype?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
@@ -257,10 +257,14 @@ const fetchPatient = async (req, res) => {
 const searchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user;
-    if (role?.toLowerCase() !== "phlebotomist") {
+    const { roleType } = req.user;
+    if (
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin"
+    ) {
       return res.status(403).json({
-        message: "Access denied. Only phlebotomists can access this resource.",
+        message:
+          "Access denied. Only phlebotomists and admins can access this resource.",
       });
     }
 
@@ -374,10 +378,10 @@ const searchPatient = async (req, res) => {
 const getPatientByMobile = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { roletype } = req.user;
+    const { roleType } = req.user;
     if (
-      roletype?.toLowerCase() !== "phlebotomist" &&
-      roletype?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:

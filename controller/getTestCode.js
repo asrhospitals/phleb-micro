@@ -6,10 +6,10 @@ const { Op } = require("sequelize");
 const searchTest = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { roletype } = req.user;
+    const { roleType } = req.user;
     if (
-      roletype?.toLowerCase() !== "phlebotomist" &&
-      roletype?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
