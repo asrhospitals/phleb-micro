@@ -185,9 +185,13 @@ const fetchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
     const { role } = req.user;
-    if (role?.toLowerCase() !== "phlebotomist") {
+    if (
+      role?.toLowerCase() !== "phlebotomist" &&
+      role?.toLowerCase() !== "admin"
+    ) {
       return res.status(403).json({
-        message: "Access denied. Only phlebotomists can access this resource.",
+        message:
+          "Access denied. Only phlebotomists and admins can access this resource.",
       });
     }
 
