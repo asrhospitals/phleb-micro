@@ -237,30 +237,10 @@ const addPatient = async (req, res) => {
 const createPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    // // 1. Add Hospital Name
-    // const { id } = req.params;
-
-    // // 2. Validate the Hospital Is available or not
-
-    //    const hospital = await Hospital.findOne({
-    //   where: { id: id },
-    // });
-
-    // // 3. Get Hospital Id
-
-    // const hospital_id = hospital.id;
-
-    // if (!hospital) {
-    //   await transaction.rollback();
-    //   return res.status(404).json({
-    //     message: `Hospital with ID '${id}' not found. Please check the hospital ID.`,
-    //   });
-    // }
-
-    // 3. Generate Registration ID and Visit ID
+      // 1. Generate Registration ID and Visit ID
     const reg_id = await generateRegId();
 
-    // 4. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
+    // 2. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
     const {
       u_name,
       country,
@@ -297,7 +277,7 @@ const createPatient = async (req, res) => {
       abha,
     } = req.body;
 
-    // 5. Create Patient Registration within transaction
+    // 3. Create Patient Registration within transaction
     const createPatient = await Patient.create(
       {
         u_name,
@@ -337,7 +317,7 @@ const createPatient = async (req, res) => {
     /// Get the Patient ID
     const patient_id = createPatient.id;
 
-    // 5. Check if additional data is provided and valid
+    // 4. Check if additional data is provided and valid
     const hasAdditionalData =
       investigation_ids &&
       investigation_ids.length &&
@@ -354,7 +334,7 @@ const createPatient = async (req, res) => {
       });
     }
 
-    // 6. Validate investigations exist
+    // 5. Validate investigations exist
     const investigations = await Investigation.findAll({
       where: {
         id: {
@@ -375,7 +355,7 @@ const createPatient = async (req, res) => {
       });
     }
 
-    // 7. Validate Existing barcodes,popno,pipno,trfno
+    // 6. Validate Existing barcodes,popno,pipno,trfno
     const existingPPM = await PPPMode.findAll({
       where: {
         [Op.or]: [
@@ -395,7 +375,7 @@ const createPatient = async (req, res) => {
       });
     }
 
-    // 8. Validate Abha Data
+    // 7. Validate Abha Data
     const existingABHA = await ABHA.findAll({
       where: {
         [Op.or]: [
@@ -413,7 +393,7 @@ const createPatient = async (req, res) => {
       });
     }
 
-    // 9. Create Patient Test Orders
+    // 8. Create Patient Test Orders
     const patienttests = investigation_ids.map((investigation_id) => ({
       patient_id,
       investigation_id,
@@ -423,7 +403,7 @@ const createPatient = async (req, res) => {
 
     await PatientTest.bulkCreate(patienttests, { transaction });
 
-    // 10. Create Bill Records
+    // 9. Create Bill Records
     const billRecords = opbill.map((bill) => ({
       ...bill,
       patient_id,
@@ -431,7 +411,7 @@ const createPatient = async (req, res) => {
 
     await OPBill.bulkCreate(billRecords, { transaction });
 
-    // 11. Create PPPMode records
+    // 10. Create PPPMode records
     const ppData = pptest.map((pp) => ({
       ...pp,
       patient_id,
@@ -439,7 +419,7 @@ const createPatient = async (req, res) => {
 
     await PPPMode.bulkCreate(ppData, { transaction });
 
-    // 12. Create ABHA records
+    // 11. Create ABHA records
     const abhaData = abha.map((ab) => ({
       ...ab,
       patient_id,

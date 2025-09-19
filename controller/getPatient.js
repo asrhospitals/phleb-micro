@@ -15,10 +15,10 @@ const { Op } = require("sequelize");
 const getPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user;
+    const { roletype } = req.user;
     if (
-      role?.toLowerCase() !== "phlebotomist" &&
-      role?.toLowerCase() !== "admin"
+      roletype?.toLowerCase() !== "phlebotomist" &&
+      roletype?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
@@ -184,10 +184,10 @@ const getPatient = async (req, res) => {
 const fetchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user;
+    const { roletype } = req.user;
     if (
-      role?.toLowerCase() !== "phlebotomist" &&
-      role?.toLowerCase() !== "admin"
+      roletype?.toLowerCase() !== "phlebotomist" &&
+      roletype?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
@@ -374,10 +374,10 @@ const searchPatient = async (req, res) => {
 const getPatientByMobile = async (req, res) => {
   try {
     /* 1. Authorization */
-    const { role } = req.user;
+    const { roletype } = req.user;
     if (
-      role?.toLowerCase() !== "phlebotomist" &&
-      role?.toLowerCase() !== "admin"
+      roletype?.toLowerCase() !== "phlebotomist" &&
+      roletype?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
