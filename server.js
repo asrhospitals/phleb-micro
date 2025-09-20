@@ -23,15 +23,17 @@ app.use(
 );
 
 // CORS Configuration - Allow hospital internal networks
-app.use(
-  cors({
-    origin:
-      NODE_ENV === "production"
-        ? process.env.ALLOWED_ORIGINS?.split(",")
-        : true,
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin:
+//       NODE_ENV === "production"
+//         ? process.env.ALLOWED_ORIGINS?.split(",")
+//         : true,
+//     credentials: true,
+//   })
+// );
+
+app.use(cors());
 // Body parser
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
