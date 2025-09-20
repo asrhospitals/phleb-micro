@@ -67,7 +67,7 @@ app.get("/", (req, res) => {
 // All Routes Define here
 // Routes For Patient Management
 // Only Phlebotomist can access these routes
-app.use("/api/v1/phelb", verifyToken, role("phlebotomist"), PatientRoutes);
+app.use("/api/v1/phleb", verifyToken, role("phlebotomist"), PatientRoutes);
 // Only Admin can access these routes
 app.use('/api/v2/phleb',verifyToken,role("admin"),PatientRoutes);
 // Common Image Uploder

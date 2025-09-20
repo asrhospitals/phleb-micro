@@ -152,7 +152,7 @@ const getPatient = async (req, res) => {
           tests: [],
           bills: plainTest.patient.patientBills || [],
           ppdata: plainTest.patient.patientPPModes || [],
-          abha_data: plainTest.patient.patientAbhas || [],
+          abha: plainTest.patient.patientAbhas || [],
         };
       }
 
