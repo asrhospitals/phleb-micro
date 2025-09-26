@@ -110,8 +110,8 @@ const Patient = sequelize.define(
         key: "id",
       },
     },
-    registration_status: {
-      type: DataTypes.ENUM("Pending", "Center", "Completed", "Verified", "Inactive"),
+    reg_by: {
+      type: DataTypes.ENUM("Node", "Center"),
       allowNull: false,
       defaultValue: "Center",
     },

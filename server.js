@@ -11,9 +11,10 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const sequelize = require("./db/dbConnection");
 const verifyToken = require("./middlewares/authMiddileware");
 const role = require("./middlewares/roleMiddleware");
-const PatientRoutes = require("./routes/route");
-const UploadTRF = require("./controller/trf");
-const UploadImage = require("./controller/profileImage");
+const PatientRoutes = require("./routes/patientRoutes");
+const ReportRoutes = require("./routes/reportRoutes");
+const UploadTRF = require("./controller/patientControllers/trf");
+const UploadImage = require("./controller/patientControllers/profileImage");
 
 //Basic security Middlewares
 app.use(
@@ -55,7 +56,6 @@ app.get("/health", async (req, res) => {
   }
 });
 
-
 // Default route
 app.get("/", (req, res) => {
   res.json({
@@ -70,13 +70,12 @@ app.get("/", (req, res) => {
 // Routes For Patient Management
 // Only Phlebotomist can access these routes
 app.use("/api/v1/phleb", verifyToken, role("phlebotomist"), PatientRoutes);
+app.use("/api/v1/phleb/report",verifyToken,role("phlebotomist"),ReportRoutes);
 // Only Admin can access these routes
-app.use('/api/v2/phleb',verifyToken,role("admin"),PatientRoutes);
+app.use("/api/v2/phleb", verifyToken, role("admin"), PatientRoutes);
 // Common Image Uploder
 app.use("/trf/upload", UploadTRF);
 app.use("/profile/upload", UploadImage);
-
-
 
 const server = async () => {
   try {

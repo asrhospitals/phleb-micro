@@ -6,6 +6,8 @@ const OPBill = require("../relationalModels/opBill");
 const PPPMode = require("../relationalModels/ppTest");
 const ABHA = require("../relationalModels/abha");
 const Department = require("../relationalModels/department");
+const Result = require("../relationalModels/investigationResult");
+const NormalValue = require("../relationalModels/normalValue");
 
 // Associations
 
@@ -13,13 +15,22 @@ const Department = require("../relationalModels/department");
 Patient.hasMany(PatientTest, { foreignKey: "patient_id", as: "patientTests" });
 PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
-//  Investigation ↔ PatientTest  
-Investigation.hasMany(PatientTest, {foreignKey: "investigation_id", as: "investigationTests"});
-PatientTest.belongsTo(Investigation, {foreignKey: "investigation_id", as: "investigation"});
+//  Investigation ↔ PatientTest
+Investigation.hasMany(PatientTest, {
+  foreignKey: "investigation_id",
+  as: "investigationTests",
+});
+PatientTest.belongsTo(Investigation, {
+  foreignKey: "investigation_id",
+  as: "investigation",
+});
 
-//  Hospital ↔ PatientTest (This one might be valid if tests are done at specific hospitals)
-Hospital.hasMany(PatientTest, {foreignKey: "hospital_id", as: "hospitalTests"});
-PatientTest.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
+//**Hospital ↔ Investigation (This one might be valid if tests are done at specific hospitals)* */  
+Hospital.hasMany(Investigation, {
+  foreignKey: "hospital_id",
+  as: "hospitalTests",
+});
+Investigation.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
 
 //  Patient ↔ OPBill (ONLY - remove hospital relationship)
 Patient.hasMany(OPBill, { foreignKey: "patient_id", as: "patientBills" });
@@ -37,16 +48,40 @@ Hospital.hasMany(Patient, { foreignKey: "hospital_id", as: "patients" });
 Patient.hasMany(ABHA, { foreignKey: "patient_id", as: "patientAbhas" });
 ABHA.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
-
 //  Patient - Investigation many-to-many via PatientTest
-Patient.belongsToMany(Investigation, {through: PatientTest,foreignKey: "patient_id",otherKey: "id",});
-Investigation.belongsToMany(Patient, {through: PatientTest,foreignKey: "id",otherKey: "patient_id",});
+Patient.belongsToMany(Investigation, {
+  through: PatientTest,
+  foreignKey: "patient_id",
+  otherKey: "id",
+});
+Investigation.belongsToMany(Patient, {
+  through: PatientTest,
+  foreignKey: "id",
+  otherKey: "patient_id",
+});
 
 // Investigation - Department
 Investigation.belongsTo(Department, { foreignKey: "departmentId" });
 Department.hasMany(Investigation, { foreignKey: "departmentId" });
 
+Investigation.hasMany(Result, {
+  foreignKey: "investigationId",
+  as: "results",
+});
+Result.belongsTo(Investigation, {
+  foreignKey: "investigationId",
+  as: "investigation",
+});
 
+// 2. Result → NormalValues
+Result.hasMany(NormalValue, {
+  foreignKey: "resultId",
+  as: "normalValues",
+});
+NormalValue.belongsTo(Result, {
+  foreignKey: "resultId",
+  as: "result",
+});
 
 module.exports = {
   Patient,
@@ -56,5 +91,7 @@ module.exports = {
   OPBill,
   PPPMode,
   ABHA,
-  Department
+  Department,
+  Result,
+  NormalValue,
 };

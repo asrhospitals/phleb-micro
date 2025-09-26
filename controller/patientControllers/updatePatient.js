@@ -1,4 +1,4 @@
-const { Patient } = require("../model/associationModels/associations");
+const { Patient } = require("../../model/associationModels/associations");
 
 // 1. Update Patient Data
 const updatePatientInfo = async (req, res) => {

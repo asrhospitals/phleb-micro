@@ -201,6 +201,13 @@ const Investigation = sequelize.define("investigation", {
   remark: {
     type: DataTypes.STRING,
   },
+
+  test_collection:{
+    type:DataTypes.ENUM("Yes","No"),
+    allowNull:false
+  }
+
+
 },{timestamps:false});
 
 module.exports = Investigation;

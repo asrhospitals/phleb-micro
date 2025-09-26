@@ -6,15 +6,23 @@ const {
   OPBill,
   PPPMode,
   ABHA,
-} = require("../model/associationModels/associations");
+} = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
-const sequelize = require("../db/dbConnection");
-const { generateRegId } = require("../utils/idGenerator");
+const sequelize = require("../../db/dbConnection");
+const { generateRegId } = require("../../utils/idGenerator");
 
 // A. Create Patient Test Along with Patient Registration
 const addPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (roleType?.toLowerCase() !== "phlebotomist") {
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
+    }
+
     // 1. Check if the user is authenticated and has a hospitalid
     const { hospital_id } = req.user;
 
@@ -98,7 +106,7 @@ const addPatient = async (req, res) => {
         city,
         state,
         p_image,
-        hospital_id,
+        hospital_id: req.user.hospital_id,
         reg_id,
       },
       { transaction }

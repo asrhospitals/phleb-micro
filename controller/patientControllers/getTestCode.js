@@ -1,4 +1,4 @@
-const { Investigation } = require("../model/associationModels/associations");
+const { Investigation } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 
 // 1. Get Investigation By Codes or Test Name
