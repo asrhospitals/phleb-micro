@@ -16,21 +16,12 @@ Patient.hasMany(PatientTest, { foreignKey: "patient_id", as: "patientTests" });
 PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
 //  Investigation ↔ PatientTest
-Investigation.hasMany(PatientTest, {
-  foreignKey: "investigation_id",
-  as: "investigationTests",
-});
-PatientTest.belongsTo(Investigation, {
-  foreignKey: "investigation_id",
-  as: "investigation",
-});
+Investigation.hasMany(PatientTest, { foreignKey: "investigation_id",as: "investigationTests",});
+PatientTest.belongsTo(Investigation, {foreignKey: "investigation_id",as: "investigation",});
 
 //**Hospital ↔ Investigation (This one might be valid if tests are done at specific hospitals)* */  
-Hospital.hasMany(Investigation, {
-  foreignKey: "hospital_id",
-  as: "hospitalTests",
-});
-Investigation.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
+// Hospital.hasMany(Investigation, {foreignKey: "hospital_id",as: "hospitalTests",});
+// Investigation.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
 
 //  Patient ↔ OPBill (ONLY - remove hospital relationship)
 Patient.hasMany(OPBill, { foreignKey: "patient_id", as: "patientBills" });
@@ -82,6 +73,9 @@ NormalValue.belongsTo(Result, {
   foreignKey: "resultId",
   as: "result",
 });
+
+
+
 
 module.exports = {
   Patient,
