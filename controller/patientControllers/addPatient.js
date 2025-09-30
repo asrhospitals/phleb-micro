@@ -234,8 +234,30 @@ const addPatient = async (req, res) => {
   } catch (err) {
     // Rollback transaction on any error
     await transaction.rollback();
-    res.status(500).send({
-      message: `Some error occurred while creating the patient test order: ${err}`,
+    // Sequelize validation or unique constraint error
+    if (
+      err.name === "SequelizeUniqueConstraintError" ||
+      err.name === "SequelizeValidationError"
+    ) {
+      const errorDetails = err.errors?.map((e) => ({
+        field: e.path,
+        message: e.message,
+        value: e.value,
+      }));
+
+      return res.status(400).json({
+        message:
+          "Validation error occurred while creating the patient test order.",
+        errorType: err.name,
+        details: errorDetails,
+      });
+    }
+
+    // Other unexpected errors
+    return res.status(500).json({
+      message:
+        "Unexpected error occurred while creating the patient test order.",
+      error: err.message,
     });
   }
 };
@@ -451,9 +473,28 @@ const createPatient = async (req, res) => {
     });
   } catch (err) {
     await transaction.rollback();
-    res.status(500).send({
-      message: `Some error occurred while creating the patient test : ${err}`,
+    // Sequelize validation or unique constraint error
+  if (err.name === "SequelizeUniqueConstraintError" || err.name === "SequelizeValidationError") {
+    const errorDetails = err.errors?.map((e) => ({
+      field: e.path,
+      message: e.message,
+      value: e.value,
+    }));
+
+    return res.status(400).json({
+      message: "Validation error occurred while creating the patient test order.",
+      errorType: err.name,
+      details: errorDetails,
     });
+  }
+
+  // Other unexpected errors
+  return res.status(500).json({
+    message: "Unexpected error occurred while creating the patient test order.",
+    error: err.message,
+  });
+
+
   }
 };
 
