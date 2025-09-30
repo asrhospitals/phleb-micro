@@ -353,7 +353,7 @@ const searchPatient = async (req, res) => {
     const patients = await Patient.findAll({
       where: filters,
       order: [["id", "ASC"]],
-      attributes: ["p_name", "p_age", "p_gender", "p_regdate", "p_lname"],
+      attributes: ["p_name", "p_age", "p_gender", "p_regdate", "p_lname","p_mobile"],
       include: [
         {
           model: ABHA,

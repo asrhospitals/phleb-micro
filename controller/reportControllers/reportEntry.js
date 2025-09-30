@@ -374,14 +374,14 @@ const getRejectReport = async (req, res) => {
     let offset = (page - 1) * limit;
 
     /* 4. Get current date in 'YYYY-MM-DD' format */
-    const currentDate = new Date()
-      .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
-      .split(",")[0];
+    // const currentDate = new Date()
+    //   .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
+    //   .split(",")[0];
 
     /* 5. Query patients with investigations where test_collection is "Yes" */
     const { count, rows } = await Patient.findAndCountAll({
       where: {
-        p_regdate: currentDate,
+        // p_regdate: currentDate,
         hospital_id: targetHospitalId,
       },
       attributes: [

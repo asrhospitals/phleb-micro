@@ -154,24 +154,24 @@ const addPatient = async (req, res) => {
     }
 
     // 7. Validate Existing barcodes,popno,pipno,trfno
-    const existingPPM = await PPPMode.findAll({
-      where: {
-        [Op.or]: [
-          { pbarcode: { [Op.in]: pptest.map((pp) => pp.pbarcode) } },
-          { popno: { [Op.in]: pptest.map((pp) => pp.popno) } },
-          { trfno: { [Op.in]: pptest.map((pp) => pp.trfno) } },
-        ],
-      },
-      transaction,
-    });
+    // const existingPPM = await PPPMode.findAll({
+    //   where: {
+    //     [Op.or]: [
+    //       { pbarcode: { [Op.in]: pptest.map((pp) => pp.pbarcode) } },
+    //       { popno: { [Op.in]: pptest.map((pp) => pp.popno) } },
+    //       { trfno: { [Op.in]: pptest.map((pp) => pp.trfno) } },
+    //     ],
+    //   },
+    //   transaction,
+    // });
 
-    if (existingPPM.length) {
-      await transaction.rollback();
-      return res.status(400).json({
-        message:
-          "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
-      });
-    }
+    // if (existingPPM.length) {
+    //   await transaction.rollback();
+    //   return res.status(400).json({
+    //     message:
+    //       "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
+    //   });
+    // }
 
     // 8. Validate Abha Data
     const existingABHA = await ABHA.findAll({
