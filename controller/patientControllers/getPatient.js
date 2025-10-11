@@ -574,6 +574,7 @@ const searchPatientBy = async (req, res) => {
       },
 
       attributes: [
+        "id",
         "p_name",
         "p_age",
         "p_gender",
