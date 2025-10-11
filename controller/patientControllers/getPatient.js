@@ -507,18 +507,6 @@ const getPatientById = async (req, res) => {
     /* Find Patient By Id */
     const patient = await Patient.findOne({
       where: { id: patientid },
-      attributes: [
-        "p_name",
-        "p_age",
-        "p_gender",
-        "p_regdate",
-        "p_lname",
-        "p_blood",
-        "p_whtsap",
-        "p_guardian",
-        "city",
-        "state",
-      ],
     });
 
     if (!patient) {
@@ -535,7 +523,7 @@ const getPatientById = async (req, res) => {
   }
 };
 
-// 6. Search By Date and Hospital Id
+// 6. Search By Date and Hospital Id For Admin
 const searchPatientBy = async (req, res) => {
   try {
     /* 1. Authorization */
