@@ -1,4 +1,4 @@
-const { Investigation } = require("../../model/associationModels/associations");
+const { Investigation, Department } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 
 // 1. Get Investigation By Codes or Test Name
@@ -35,6 +35,12 @@ const searchTest = async (req, res) => {
       where: filters,
       order: [["id", "ASC"]],
       attributes: ["id", "testname", "shortcode", "normalprice"],
+      include:[
+        {
+          model:Department,
+          attributes:['dptname']
+        }
+      ]
     });
 
     return res.status(200).json(test);
