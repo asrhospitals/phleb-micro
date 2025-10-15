@@ -280,8 +280,8 @@ const getTestData = async (req, res) => {
           attributes: ["hospitalname"],
         },
       ],
-      limit,
-      offset,
+      limit:limit,
+      offset:offset,
       order: [["id", "ASC"]],
       subQuery: false,
     });
