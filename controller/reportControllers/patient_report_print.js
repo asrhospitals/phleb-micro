@@ -63,7 +63,7 @@ const getReport = async (req, res) => {
         {
           model: PatientTest,
           as: "patientTests",
-          attributes: ["test_id", "status","h_l_flag","test_result"],
+          attributes: ["test_id", "status", "h_l_flag", "test_result"],
           include: [
             {
               model: Investigation,
@@ -78,8 +78,8 @@ const getReport = async (req, res) => {
           attributes: ["hospitalname"],
         },
       ],
-      limit,
-      offset,
+      limit: limit,
+      offset: offset,
       order: [["id", "ASC"]],
       distinct: true,
     });
