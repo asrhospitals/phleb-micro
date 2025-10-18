@@ -47,7 +47,7 @@ const Patient = sequelize.define(
       allowNull: false,
     },
     p_age: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
     },
     p_years:{

@@ -20,7 +20,7 @@ router.route("/get-patient-data/:hospitalid").get(getPatient);
 router.route("/get-patient/:patientid").get(getPatientById);
 
 // 5. Search Patient Data
-router.route("/search-patient").get(searchPatient);
+router.route("/search-patient/:hospitalid").get(searchPatient);
 
 // 6. Get Patient By Mobile Number
 router.route("/get-data-mobile").get(getPatientByMobile);
@@ -35,7 +35,7 @@ router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);
 router.route("/send-tests").put(updateTestStatus);
 
 // 10. Search Test by Test name or Shortcode
-router.route("/search-test").get(searchTest);
+router.route("/search-test").get(searchTest);   
 
 // 11. Search Patient For Admin By Hospital id and Date Filter
 router.route("/get-data/:hospitalid").get(searchPatientBy);

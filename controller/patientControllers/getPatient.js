@@ -280,8 +280,8 @@ const getTestData = async (req, res) => {
           attributes: ["hospitalname"],
         },
       ],
-      limit:limit,
-      offset:offset,
+      limit: limit,
+      offset: offset,
       order: [["id", "ASC"]],
       subQuery: false,
     });
@@ -325,9 +325,32 @@ const searchPatient = async (req, res) => {
       });
     }
 
-    /* 2. Query Parameters */
-    const { department, refdoc, pbarcode, billstatus, startDate, endDate } =
-      req.query;
+    /* 2. Hospital filters */
+
+    const { hospitalid } = req.params;
+
+    const hospital = await Hospital.findByPk(hospitalid);
+
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital not found" });
+    }
+
+    /* 3. Pagination  */
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 20;
+    let offset = (page - 1) * limit;
+
+    /* 4. Query Parameters */
+    const {
+      department,
+      refdoc,
+      pbarcode,
+      p_mobile,
+      p_name,
+      billstatus,
+      startDate,
+      endDate,
+    } = req.query;
     const filters = {};
     if (department) {
       filters["$patientTests.investigation.department.dptname$"] = department;
@@ -343,16 +366,28 @@ const searchPatient = async (req, res) => {
     if (billstatus) {
       filters["$patientBills.billstatus$"] = billstatus;
     }
+    if (p_mobile) {
+      filters["$patient.p_mobile$"] = p_mobile;
+    }
     if (startDate && endDate) {
       filters["$patient.p_regdate$"] = {
-        [Op.between]: [startDate, endDate],
+        [Op.between]: [new Date(startDate), new Date(endDate)],
+      };
+    }
+
+    if (p_name) {
+      filters["$patient.p_name$"] = {
+        [Op.iLike]: `%${p_name}%`,
       };
     }
 
     /* Find Patients Matching the Query */
-    const patients = await Patient.findAll({
-      where: filters,
-      order: [["id", "ASC"]],
+    const { count, rows } = await Patient.findAndCountAll({
+      where: {
+        hospital_id: hospital.id,
+        ...filters,
+      },
+
       attributes: [
         "p_name",
         "p_age",
@@ -425,9 +460,30 @@ const searchPatient = async (req, res) => {
         },
         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
       ],
+      order: [["id", "ASC"]],
+      limit: limit,
+      offset: offset,
+      distinct: true,
+      col: "id",
     });
 
-    return res.status(200).json(patients);
+    const totalPages = Math.ceil(count / limit);
+
+    if (!rows) {
+      return res.status(404).json({
+        message: "No data available ",
+      });
+    }
+
+    return res.status(200).json({
+      data: rows,
+      meta: {
+        totalItems: count,
+        itemsPerPage: limit,
+        currentPage: page,
+        totalPages: totalPages,
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       message: `Something went wrong while searching patients ${error}`,
