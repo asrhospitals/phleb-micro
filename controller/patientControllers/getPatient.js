@@ -337,7 +337,7 @@ const searchPatient = async (req, res) => {
 
     /* 3. Pagination  */
     let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 20;
+    let limit = parseInt(req.query.limit) || 10;
     let offset = (page - 1) * limit;
 
     /* 4. Query Parameters */
@@ -465,6 +465,7 @@ const searchPatient = async (req, res) => {
       offset: offset,
       distinct: true,
       col: "id",
+      subQuery: false,
     });
 
     const totalPages = Math.ceil(count / limit);
