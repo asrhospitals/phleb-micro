@@ -21,12 +21,12 @@ const getReport = async (req, res) => {
 
     let targetHospitalId;
 
-    if (parseInt(hospitalid) !== req.user.hospital_id) {
+    if (parseInt(hospitalid) !== req.user.hospitalid) {
       return res.status(403).json({
         message: "Access denied. Hospital ID mismatch.",
       });
     }
-    targetHospitalId = req.user.hospital_id;
+    targetHospitalId = req.user.hospitalid;
 
     const hospital = await Hospital.findOne({
       where: { id: targetHospitalId },

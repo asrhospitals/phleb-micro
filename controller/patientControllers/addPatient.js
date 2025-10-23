@@ -24,11 +24,11 @@ const addPatient = async (req, res) => {
     }
 
     // 1. Check if the user is authenticated and has a hospitalid
-    const { hospital_id } = req.user;
+    const { hospitalid } = req.user;
 
     // 2. Validate the Hospital Is available or not
 
-    const hospital = await Hospital.findByPk(hospital_id);
+    const hospital = await Hospital.findByPk(hospitalid);
     if (!hospital) {
       await transaction.rollback();
       return res.status(400).json({
@@ -195,7 +195,7 @@ const addPatient = async (req, res) => {
     const patienttests = investigation_ids.map((investigation_id) => ({
       patient_id,
       investigation_id,
-      hospital_id,
+      hospitalid,
       status: "center",
     }));
 
