@@ -6,6 +6,7 @@ const {
   OPBill,
   PPPMode,
   ABHA,
+  Nodal
 } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
@@ -24,7 +25,7 @@ const addPatient = async (req, res) => {
     }
 
     // 1. Check if the user is authenticated and has a hospitalid
-    const { hospitalid } = req.user;
+    const { hospitalid,nodalid } = req.user;
 
     // 2. Validate the Hospital Is available or not
 
@@ -33,6 +34,14 @@ const addPatient = async (req, res) => {
       await transaction.rollback();
       return res.status(400).json({
         message: `Hospital name mismatch or not found. Please check the hospital name in the URL.`,
+      });
+    }
+
+    const nodal=await Nodal.findByPk(nodalid);
+    if(!nodal){
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Nodal name mismatch or not found. Please check the nodal name in the URL.`,
       });
     }
 
@@ -106,7 +115,8 @@ const addPatient = async (req, res) => {
         city,
         state,
         p_image,
-        hospital_id: req.user.hospital_id,
+        hospitalid: req.user.hospitalid,
+        nodalid: req.user.nodalid,
         reg_id,
       },
       { transaction }
@@ -196,6 +206,7 @@ const addPatient = async (req, res) => {
       patient_id,
       investigation_id,
       hospitalid,
+      nodalid,
       status: "center",
     }));
 
@@ -262,6 +273,8 @@ const addPatient = async (req, res) => {
   }
 };
 
+
+
 // 2. Add Patient As Per Hospital for admin
 
 const createPatient = async (req, res) => {
@@ -308,7 +321,7 @@ const createPatient = async (req, res) => {
       city,
       state,
       p_image,
-      hospital_id,
+      hospitalid,
       investigation_ids,
       opbill,
       pptest,
@@ -346,7 +359,7 @@ const createPatient = async (req, res) => {
         city,
         state,
         p_image,
-        hospital_id,
+        hospitalid,
         reg_id,
       },
       { transaction }
@@ -435,7 +448,7 @@ const createPatient = async (req, res) => {
     const patienttests = investigation_ids.map((investigation_id) => ({
       patient_id,
       investigation_id,
-      hospital_id,
+      hospitalid,
       status: "center",
     }));
 

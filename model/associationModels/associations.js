@@ -8,6 +8,7 @@ const ABHA = require("../relationalModels/abha");
 const Department = require("../relationalModels/department");
 const Result = require("../relationalModels/investigationResult");
 const NormalValue = require("../relationalModels/normalValue");
+const Nodal = require("../relationalModels/nodalMaster");
 
 // Associations
 
@@ -19,9 +20,6 @@ PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 Investigation.hasMany(PatientTest, { foreignKey: "investigation_id",as: "investigationTests",});
 PatientTest.belongsTo(Investigation, {foreignKey: "investigation_id",as: "investigation",});
 
-//**Hospital ↔ Investigation (This one might be valid if tests are done at specific hospitals)* */  
-// Hospital.hasMany(Investigation, {foreignKey: "hospital_id",as: "hospitalTests",});
-// Investigation.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
 
 //  Patient ↔ OPBill (ONLY - remove hospital relationship)
 Patient.hasMany(OPBill, { foreignKey: "patient_id", as: "patientBills" });
@@ -32,8 +30,15 @@ Patient.hasMany(PPPMode, { foreignKey: "patient_id", as: "patientPPModes" });
 PPPMode.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
 //  Patient ↔ Hospital
-Patient.belongsTo(Hospital, { foreignKey: "hospital_id", as: "hospital" });
-Hospital.hasMany(Patient, { foreignKey: "hospital_id", as: "patients" });
+Patient.belongsTo(Hospital, { foreignKey: "hospitalid", as: "hospital" });
+Hospital.hasMany(Patient, { foreignKey: "hospitalid", as: "patients" });
+
+//  Patient ↔ Nodal
+Patient.belongsTo(Nodal, { foreignKey: "nodalid", as: "nodal" });
+Nodal.hasMany(Patient, { foreignKey: "nodalid", as: "patients" });
+
+
+
 
 //  Patient ↔ ABHA
 Patient.hasMany(ABHA, { foreignKey: "patient_id", as: "patientAbhas" });
@@ -88,4 +93,5 @@ module.exports = {
   Department,
   Result,
   NormalValue,
+  Nodal
 };

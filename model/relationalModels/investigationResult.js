@@ -5,6 +5,8 @@ const InvestigationResult = sequelize.define(
   "inv_result",
   {
     resultname: { type: DataTypes.STRING },
+    otherlang:{type:DataTypes.STRING},
+    extrsltid:{type:DataTypes.STRING},
     unit: { type: DataTypes.STRING },
     valueType: { type: DataTypes.STRING },
     formula: { type: DataTypes.STRING },

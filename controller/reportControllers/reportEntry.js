@@ -66,7 +66,7 @@ const getCenterTestData = async (req, res) => {
     const { count, rows } = await Patient.findAndCountAll({
       where: {
         p_regdate: currentDate,
-        hospital_id: targetHospitalId,
+        hospitalid: targetHospitalId,
       },
       attributes: [
         "id",
@@ -382,7 +382,7 @@ const getRejectReport = async (req, res) => {
     const { count, rows } = await Patient.findAndCountAll({
       where: {
         // p_regdate: currentDate,
-        hospital_id: targetHospitalId,
+        hospitalid: targetHospitalId,
       },
       attributes: [
         "id",

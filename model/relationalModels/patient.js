@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 const Hospital = require("../relationalModels/hospital");
+const Nodal = require("../relationalModels/nodalMaster");
 
 const Patient = sequelize.define(
   "patient",
@@ -102,7 +103,7 @@ const Patient = sequelize.define(
     state: {
       type: DataTypes.STRING,
     },
-    hospital_id: {
+    hospitalid: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
@@ -110,6 +111,15 @@ const Patient = sequelize.define(
         key: "id",
       },
     },
+
+    nodalid:{
+      type:DataTypes.INTEGER,
+      references:{
+        model:Nodal,
+        key:"id"
+      }
+    },
+
     reg_by: {
       type: DataTypes.ENUM("Node", "Center"),
       allowNull: false,
@@ -120,9 +130,6 @@ const Patient = sequelize.define(
       allowNull: false,
     }
   },
-  {
-    timestamps: false,
-  }
 );
 
 

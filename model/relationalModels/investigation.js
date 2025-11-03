@@ -1,4 +1,4 @@
-const { DataTypes} = require("sequelize");
+const { DataTypes, QueryTypes } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 
 const Investigation = sequelize.define("investigation", {
@@ -43,9 +43,6 @@ const Investigation = sequelize.define("investigation", {
     type: DataTypes.STRING,
   },
   roletype: {
-    type: DataTypes.STRING,
-  },
-  reporttype: {
     type: DataTypes.STRING,
   },
   sampletype: {
@@ -113,19 +110,6 @@ const Investigation = sequelize.define("investigation", {
   },
 
   ///---Test Price
-
-  walkinprice: {
-    type: DataTypes.FLOAT,
-  },
-  b2bprice: {
-    type: DataTypes.FLOAT,
-  },
-  ppprice: {
-    type: DataTypes.FLOAT,
-  },
-  govtprice: {
-    type: DataTypes.FLOAT,
-  },
   normalprice: {
     type: DataTypes.FLOAT,
   },
@@ -160,20 +144,6 @@ const Investigation = sequelize.define("investigation", {
     type: DataTypes.ARRAY(DataTypes.INTEGER),
   },
 
-  //---Barcode & Timinng
-  barcodelngt: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  barcode: {
-    type: DataTypes.INTEGER,
-  },
-  spbarcode: {
-    type: DataTypes.STRING,
-  },
-  suffbarcode: {
-    type: DataTypes.STRING,
-  },
   tat: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -201,13 +171,10 @@ const Investigation = sequelize.define("investigation", {
   remark: {
     type: DataTypes.STRING,
   },
-
-  test_collection:{
+    test_collection:{
     type:DataTypes.ENUM("Yes","No"),
     allowNull:false
   }
-
-
 },{timestamps:false});
 
 module.exports = Investigation;

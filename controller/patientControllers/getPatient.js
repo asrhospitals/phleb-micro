@@ -71,7 +71,7 @@ const getPatient = async (req, res) => {
     const { count, rows } = await Patient.findAndCountAll({
       where: {
         p_regdate: currentDate,
-        hospital_id: targetHospitalId,
+        hospitalid: targetHospitalId,
         reg_by: "Center",
       },
       attributes: [
@@ -213,7 +213,7 @@ const getTestData = async (req, res) => {
     const { count, rows } = await Patient.findAndCountAll({
       where: {
         p_regdate: currentDate,
-        hospital_id: targetHospitalId,
+        hospitalid: targetHospitalId,
       },
       attributes: [
         "id",
@@ -384,7 +384,7 @@ const searchPatient = async (req, res) => {
     /* Find Patients Matching the Query */
     const { count, rows } = await Patient.findAndCountAll({
       where: {
-        hospital_id: hospital.id,
+        hospitalid: hospital.id,
         ...filters,
       },
 
@@ -612,7 +612,7 @@ const searchPatientBy = async (req, res) => {
     /* 5. Find Patients Matching the Query and the Hospital */
     const { count, rows } = await Patient.findAndCountAll({
       where: {
-        hospital_id: hospital.id,
+        hospitalid: hospital.id,
         p_regdate: {
           [Op.between]: [startDate, endDate],
         },

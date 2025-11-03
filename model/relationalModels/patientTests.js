@@ -3,14 +3,22 @@ const { DataTypes } = require("sequelize");
 const Patient = require("../relationalModels/patient");
 const Investigation = require("../relationalModels/investigation");
 const Hospital = require("../relationalModels/hospital");
+const Nodal = require("../relationalModels/nodalMaster");
 
 const PatientTest = sequelize.define(
   "patient_test",
   {
-    hospital_id: {
+    hospitalid: {
       type: DataTypes.INTEGER,
       references: {
         model: Hospital,
+        key: "id",
+      },
+    },
+    nodalid:{
+      type: DataTypes.INTEGER,
+      references: {
+        model: Nodal,
         key: "id",
       },
     },
@@ -93,9 +101,6 @@ const PatientTest = sequelize.define(
       defaultValue: "center",
     },
   },
-  {
-    timestamps: false,
-  }
 );
 
 module.exports = PatientTest;
