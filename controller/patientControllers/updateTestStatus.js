@@ -34,12 +34,12 @@ const updateTestStatus = async (req, res) => {
     }
 
     // Step 2: Extract the matching test_ids
-    const testIds = tests.map((t) => t.test_id);
+    const testIds = tests.map((t) => t.id);
 
     // Step 3: Update only those PatientTests
     await PatientTest.update(
       { status: "node" },
-      { where: { test_id: testIds } }
+      { where: { id: testIds } }
     );
 
     return res.status(200).json({

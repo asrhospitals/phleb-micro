@@ -244,7 +244,7 @@ const getTestData = async (req, res) => {
           as: "patientTests",
           where: { status: "center" },
           attributes: [
-            "test_id",
+            "id",
             "status",
             "rejection_reason",
             "test_created_date",

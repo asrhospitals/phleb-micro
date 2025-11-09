@@ -63,7 +63,7 @@ const getReport = async (req, res) => {
         {
           model: PatientTest,
           as: "patientTests",
-          attributes: ["test_id", "status", "h_l_flag", "test_result"],
+          attributes: ["id", "status", "h_l_flag", "test_result"],
           include: [
             {
               model: Investigation,

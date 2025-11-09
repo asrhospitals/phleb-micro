@@ -97,7 +97,7 @@ const getCenterTestData = async (req, res) => {
           as: "patientTests",
           where: { status: "center" },
           attributes: [
-            "test_id",
+            "id",
             "status",
             "rejection_reason",
             "test_created_date",
@@ -291,9 +291,9 @@ const rejectTests = async (req, res) => {
     let updatedCount = 0;
 
     for (const item of test_results) {
-      const { test_id, rejection_reason } = item;
+      const { id, rejection_reason } = item;
 
-      if (!test_id) continue;
+      if (!id) continue;
 
       const [rowsUpdated] = await PatientTest.update(
         {
@@ -301,7 +301,7 @@ const rejectTests = async (req, res) => {
           rejection_reason: rejection_reason || null,
         },
         {
-          where: { test_id, patient_id: patientId },
+          where: { id, patient_id: patientId },
         }
       );
 
@@ -413,7 +413,7 @@ const getRejectReport = async (req, res) => {
           as: "patientTests",
           where: { status: "reject" },
           attributes: [
-            "test_id",
+            "id",
             "status",
             "rejection_reason",
             "test_created_date",
