@@ -722,6 +722,59 @@ const searchPatientBy = async (req, res) => {
   }
 };
 
+// 7. Search Barcode
+const searchBarcode = async (req, res) => {
+  try {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (
+      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "admin" &&
+      roleType?.toLowerCase() !== "reception"
+    ) {
+      return res.status(403).json({
+      message: "Access denied. Only phlebotomists, admins, and receptionists can access this resource."
+      });
+    }
+
+    /* 3. Query Parameters */
+    const { pbarcode } = req.query;
+    const filters = {};
+
+    if (pbarcode) {
+      filters["$patientPPModes.pbarcode$"] = pbarcode;
+    }
+
+    /* Find Barcode Matching the Query */
+  const result=  await Patient.findAndCountAll({
+      where: filters,
+      include: [
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: ["pbarcode"],
+        },
+      ],
+      order: [["id", "ASC"]],
+
+      distinct: true,
+      col: "id",
+      subQuery: false,
+    });
+
+    if (result.count === 0) {
+  return res.status(404).json({ message: "No matching barcode found." });
+}
+
+
+    return res.status(200).json({ message: "Barcode found" });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Something went wrong while searching patients ${error}`,
+    });
+  }
+};
+
 module.exports = {
   getPatient,
   searchPatient,
@@ -729,4 +782,5 @@ module.exports = {
   getPatientById,
   getTestData,
   searchPatientBy,
+  searchBarcode
 };

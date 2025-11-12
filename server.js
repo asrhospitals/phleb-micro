@@ -78,6 +78,7 @@ app.use("/api/v2/phleb", verifyToken, role("admin"), PatientRoutes);
 //For reception Users
 app.use("/api/v3/phleb", verifyToken, role("reception"), PatientRoutes);
 app.use("/api/v3/phleb/report",verifyToken,role("reception"),ReportRoutes);
+app.use("/api/v4/search",verifyToken,role("admin","reception","phlebotomist"),PatientRoutes);
 
 
 // Common Image Uploder

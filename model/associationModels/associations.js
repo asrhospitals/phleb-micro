@@ -14,7 +14,7 @@ const Nodal = require("../relationalModels/nodalMaster");
 
 // Patient ↔ PatientTest
 Patient.hasMany(PatientTest, { foreignKey: "patient_id", as: "patientTests" });
-PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
+PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient",targetKey:'id' });
 
 //  Investigation ↔ PatientTest
 Investigation.hasMany(PatientTest, { foreignKey: "investigation_id",as: "investigationTests",});

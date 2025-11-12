@@ -175,13 +175,13 @@ const addPatient = async (req, res) => {
     //   transaction,
     // });
 
-    // if (existingPPM.length) {
-    //   await transaction.rollback();
-    //   return res.status(400).json({
-    //     message:
-    //       "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
-    //   });
-    // }
+    if (existingPPM.length) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message:
+          "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
+      });
+    }
 
     // 8. Validate Abha Data
     const existingABHA = await ABHA.findAll({

@@ -1,7 +1,7 @@
 const Router = require("express");
 const { updateTestStatus } = require("../controller/patientControllers/updateTestStatus");
 const { addPatient, createPatient } = require("../controller/patientControllers/addPatient");
-const {getPatient,searchPatient,getPatientByMobile,getPatientById, getTestData, searchPatientBy} = require("../controller/patientControllers/getPatient");
+const {getPatient,searchPatient,getPatientByMobile,getPatientById, getTestData, searchPatientBy, searchBarcode} = require("../controller/patientControllers/getPatient");
 const { updatePatientInfo } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -39,6 +39,9 @@ router.route("/search-test").get(searchTest);
 
 // 11. Search Patient For Admin By Hospital id and Date Filter
 router.route("/get-data/:hospitalid").get(searchPatientBy);
+
+// 12. Search Barcode
+router.route("/search-code").get(searchBarcode);
 
 
 

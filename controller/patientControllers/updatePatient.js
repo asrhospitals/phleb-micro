@@ -10,7 +10,7 @@ const updatePatientInfo = async (req, res) => {
     }
 
     await patient.update(req.body);
-    return res.status(200).json(patient);
+    return res.status(200).json({message:"Updated successfully"});
   } catch (error) {
     res.status(500).json({ message: `Something went wrong ${error}` });
   }

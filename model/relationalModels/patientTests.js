@@ -31,6 +31,8 @@ const PatientTest = sequelize.define("patient_test", {
       model: Patient,
       key: "id",
     },
+    onUpdate: "CASCADE",
+    onDelete: "CASCADE",
   },
 
   investigation_id: {
