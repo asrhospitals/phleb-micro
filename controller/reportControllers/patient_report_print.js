@@ -10,9 +10,9 @@ const getReport = async (req, res) => {
   try {
     /* 1. Authorization */
     const { roleType } = req.user;
-    if (roleType?.toLowerCase() !== "phlebotomist") {
+    if (roleType?.toLowerCase() !== "phlebotomist" && roleType?.toLowerCase() !== "reception" ) {
       return res.status(403).json({
-        message: "Access denied. Only phlebotomists can access this resource.",
+        message: "Access denied. Only phlebotomists and receptionist can access this resource.",
       });
     }
 
