@@ -40,8 +40,8 @@ const getReport = async (req, res) => {
     /* 5. Query patients with investigations where test_collection is "Yes" */
     const { count, rows } = await Patient.findAndCountAll({
       where: {
-        // p_regdate: currentDate,
-        hospitalid: targetHospitalId,
+        
+        hospitalid: hospital.id,
       },
       attributes: ["id", "p_name", "p_regdate"],
       include: [
