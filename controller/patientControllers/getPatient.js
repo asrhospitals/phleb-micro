@@ -318,6 +318,7 @@ const searchPatient = async (req, res) => {
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin"
+
     ) {
       return res.status(403).json({
         message:
@@ -550,7 +551,9 @@ const getPatientById = async (req, res) => {
     const { roleType } = req.user;
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
-      roleType?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "admin" &&
+      roleType?.toLowerCase() !== "reception"
+
     ) {
       return res.status(403).json({
         message:
