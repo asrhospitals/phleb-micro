@@ -9,11 +9,12 @@ const searchTest = async (req, res) => {
     const { roleType } = req.user;
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
-      roleType?.toLowerCase() !== "admin"
+      roleType?.toLowerCase() !== "admin" &&
+       roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
+          "Access denied.Unauthorized user.",
       });
     }
 
@@ -28,6 +29,10 @@ const searchTest = async (req, res) => {
       filters["testname"] = {
         [Op.iLike]: `%${testname}%`,
       };
+    }
+
+    if (!shortcodes && !testname){
+      return res.status(403).json({message:"Query should not be empty"})
     }
 
     /* Find Patients Matching the Query */
