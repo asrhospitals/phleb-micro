@@ -23,30 +23,36 @@ const searchTest = async (req, res) => {
     /* 2. Query Parameters */
     const { shortcodes, testname } = req.query;
     const filters = {};
-        // Require at least one filter for a meaningful search
-    if (Object.keys(filters).length === 0) {
+    // Require at least one filter for a meaningful search
+    if (!shortcodes && !testname) {
       return res.status(400).json({
         message: "Must provide a search parameter (testname or shortcode).",
       });
     }
+    const orFilters = [];
+
     if (shortcodes) {
-      const shortcodeArray = shortcodes
-        .split(",")
-        .map((code) => parseInt(code.trim()));
-      filters["shortcode"] = { [Op.in]: shortcodeArray };
-    }
-    if (testname) {
-      const testnameArray = testname.split(",").map((name) => name.trim());
-      filters["testname"] = { [Op.in]: testnameArray };
+      const shortcodeArray = shortcodes.split(",").map((code) => code.trim());
+      orFilters.push({
+        shortcode: { [Op.in]: shortcodeArray },
+      });
     }
 
-    if (!shortcodes && !testname) {
-      return res.status(403).json({ message: "Query should not be empty" });
+    if (testname) {
+      const testnameArray = testname.split(",").map((name) => name.trim());
+      // Case-insensitive "starts with" search for progressive typing
+      orFilters.push({
+        testname: {
+          [Op.or]: testnameArray.map((name) => ({
+            [Op.iLike]: `${name}%`,
+          })),
+        },
+      });
     }
 
     /* Find Patients Matching the Query */
     const test = await Investigation.findAll({
-      where: filters,
+      where: { [Op.or]: orFilters },
       order: [["id", "ASC"]],
       attributes: ["id", "testname", "shortcode", "normalprice"],
       include: [
