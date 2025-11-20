@@ -1,4 +1,7 @@
-const { Investigation, Department } = require("../../model/associationModels/associations");
+const {
+  Investigation,
+  Department,
+} = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 
 // 1. Get Investigation By Codes or Test Name
@@ -10,29 +13,35 @@ const searchTest = async (req, res) => {
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin" &&
-       roleType?.toLowerCase() !== "reception"
+      roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
-        message:
-          "Access denied.Unauthorized user.",
+        message: "Access denied.Unauthorized user.",
       });
     }
 
     /* 2. Query Parameters */
     const { shortcodes, testname } = req.query;
     const filters = {};
-
+        // Require at least one filter for a meaningful search
+    if (Object.keys(filters).length === 0) {
+      return res.status(400).json({
+        message: "Must provide a search parameter (testname or shortcode).",
+      });
+    }
     if (shortcodes) {
-      filters["shortcode"] = parseInt(shortcodes);
+      const shortcodeArray = shortcodes
+        .split(",")
+        .map((code) => parseInt(code.trim()));
+      filters["shortcode"] = { [Op.in]: shortcodeArray };
     }
     if (testname) {
-      filters["testname"] = {
-        [Op.iLike]: `%${testname}%`,
-      };
+      const testnameArray = testname.split(",").map((name) => name.trim());
+      filters["testname"] = { [Op.in]: testnameArray };
     }
 
-    if (!shortcodes && !testname){
-      return res.status(403).json({message:"Query should not be empty"})
+    if (!shortcodes && !testname) {
+      return res.status(403).json({ message: "Query should not be empty" });
     }
 
     /* Find Patients Matching the Query */
@@ -40,13 +49,17 @@ const searchTest = async (req, res) => {
       where: filters,
       order: [["id", "ASC"]],
       attributes: ["id", "testname", "shortcode", "normalprice"],
-      include:[
+      include: [
         {
-          model:Department,
-          attributes:['dptname']
-        }
-      ]
+          model: Department,
+          attributes: ["dptname"],
+        },
+      ],
     });
+
+    if (test.length === 0) {
+      return res.status(404).json({ message: "No matching tests found." });
+    }
 
     return res.status(200).json(test);
   } catch (error) {
