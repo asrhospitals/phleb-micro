@@ -94,7 +94,7 @@ const server = async () => {
       await sequelize.sync();
     }
 
-    // await sequelize.sync();
+    //  await sequelize.sync({alter:true})
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
