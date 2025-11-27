@@ -1,20 +1,24 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../../db/dbConnection");
+const sequilize = require("../../db/dbConnection");
 
-const NormalValue = sequelize.define(
+const NormalValue = sequilize.define(
   "inv_normalvalue",
   {
     gender: DataTypes.STRING,
-    ageMin: DataTypes.INTEGER,
-    ageMax: DataTypes.INTEGER,
-    rangeMin: DataTypes.FLOAT,
-    rangeMax: DataTypes.FLOAT,
-    validRangeMin: DataTypes.FLOAT,
-    validRangeMax: DataTypes.FLOAT,
-    criticalLow: DataTypes.FLOAT,
-    criticalHigh: DataTypes.FLOAT,
-    isRangeAbnormal: DataTypes.BOOLEAN,
-    avoidInReport: DataTypes.BOOLEAN,
+    age_min_yyyy: DataTypes.INTEGER,
+    age_min_mm:DataTypes.INTEGER,
+    age_min_dd:DataTypes.INTEGER,
+    age_max_yyyy: DataTypes.INTEGER,
+    age_max_mm: DataTypes.INTEGER,
+    age_max_dd: DataTypes.INTEGER,
+    range_min: DataTypes.FLOAT,
+    range_max: DataTypes.FLOAT,
+    valid_range_min: DataTypes.FLOAT,
+    valid_range_max: DataTypes.FLOAT,
+    critical_low: DataTypes.FLOAT,
+    critical_high: DataTypes.FLOAT,
+    isrange_abnormal: DataTypes.BOOLEAN,
+    avoid_in_report: DataTypes.BOOLEAN,
     resultId: DataTypes.INTEGER,
   },
   { timestamps: false }

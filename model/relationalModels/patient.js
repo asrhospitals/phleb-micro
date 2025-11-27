@@ -103,6 +103,10 @@ const Patient = sequelize.define(
     state: {
       type: DataTypes.STRING,
     },
+    p_pincode: {
+      type: DataTypes.BIGINT,
+      maxlength: 6,
+    },
     hospitalid: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -128,7 +132,13 @@ const Patient = sequelize.define(
     reg_id:{
       type: DataTypes.STRING,
       allowNull: false,
-    }
+    },
+    p_whtsap_alart:{
+      type:DataTypes.BOOLEAN,
+    },
+    p_email_alart:{
+      type:DataTypes.BOOLEAN,
+    },
   },
 );
 
