@@ -6,7 +6,7 @@ const {
   OPBill,
   PPPMode,
   ABHA,
-  Nodal
+  Nodal,
 } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
@@ -25,7 +25,7 @@ const addPatient = async (req, res) => {
     }
 
     // 1. Check if the user is authenticated and has a hospitalid
-    const { hospitalid,nodalid } = req.user;
+    const { hospitalid, nodalid } = req.user;
 
     // 2. Validate the Hospital Is available or not
 
@@ -37,8 +37,8 @@ const addPatient = async (req, res) => {
       });
     }
 
-    const nodal=await Nodal.findByPk(nodalid);
-    if(!nodal){
+    const nodal = await Nodal.findByPk(nodalid);
+    if (!nodal) {
       await transaction.rollback();
       return res.status(400).json({
         message: `Nodal name mismatch or not found. Please check the nodal name in the URL.`,
@@ -78,6 +78,9 @@ const addPatient = async (req, res) => {
       city,
       state,
       p_image,
+      p_whtsap_alart,
+      p_email_alart,
+      p_pincode,
       investigation_ids,
       opbill,
       pptest,
@@ -115,6 +118,9 @@ const addPatient = async (req, res) => {
         city,
         state,
         p_image,
+        p_whtsap_alart,
+        p_email_alart,
+        p_pincode,
         hospitalid: req.user.hospitalid,
         nodalid: req.user.nodalid,
         reg_id,
@@ -138,7 +144,7 @@ const addPatient = async (req, res) => {
       // Commit the transaction with just patient creation
       await transaction.commit();
       return res.status(201).json({
-        message: "Patient Created Successfully. No test added. No bill added",
+        message: "Patient Info Data Saved Successfully. No test added. No bill added",
       });
     }
 
@@ -272,8 +278,6 @@ const addPatient = async (req, res) => {
     });
   }
 };
-
-
 
 // 2. Add Patient As Per Hospital for admin
 
@@ -487,27 +491,30 @@ const createPatient = async (req, res) => {
   } catch (err) {
     await transaction.rollback();
     // Sequelize validation or unique constraint error
-  if (err.name === "SequelizeUniqueConstraintError" || err.name === "SequelizeValidationError") {
-    const errorDetails = err.errors?.map((e) => ({
-      field: e.path,
-      message: e.message,
-      value: e.value,
-    }));
+    if (
+      err.name === "SequelizeUniqueConstraintError" ||
+      err.name === "SequelizeValidationError"
+    ) {
+      const errorDetails = err.errors?.map((e) => ({
+        field: e.path,
+        message: e.message,
+        value: e.value,
+      }));
 
-    return res.status(400).json({
-      message: "Validation error occurred while creating the patient test order.",
-      errorType: err.name,
-      details: errorDetails,
+      return res.status(400).json({
+        message:
+          "Validation error occurred while creating the patient test order.",
+        errorType: err.name,
+        details: errorDetails,
+      });
+    }
+
+    // Other unexpected errors
+    return res.status(500).json({
+      message:
+        "Unexpected error occurred while creating the patient test order.",
+      error: err.message,
     });
-  }
-
-  // Other unexpected errors
-  return res.status(500).json({
-    message: "Unexpected error occurred while creating the patient test order.",
-    error: err.message,
-  });
-
-
   }
 };
 
