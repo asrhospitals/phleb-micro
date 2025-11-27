@@ -144,7 +144,8 @@ const addPatient = async (req, res) => {
       // Commit the transaction with just patient creation
       await transaction.commit();
       return res.status(201).json({
-        message: "Patient Info Data Saved Successfully. No test added. No bill added",
+        message:
+          "Patient Info Data Saved Successfully. No test added. No bill added",
       });
     }
 
@@ -324,6 +325,9 @@ const createPatient = async (req, res) => {
       landmark,
       city,
       state,
+      p_whtsap_alart,
+      p_email_alart,
+      p_pincode,
       p_image,
       hospitalid,
       investigation_ids,
@@ -363,6 +367,9 @@ const createPatient = async (req, res) => {
         city,
         state,
         p_image,
+        p_whtsap_alart,
+        p_email_alart,
+        p_pincode,
         hospitalid,
         reg_id,
       },
