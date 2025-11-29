@@ -523,6 +523,7 @@ const getPatientByMobile = async (req, res) => {
       where: filters,
       order: [["id", "ASC"]],
       attributes: [
+        "id",
         "p_title",
         "p_name",
         "p_lname",

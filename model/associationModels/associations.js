@@ -9,6 +9,8 @@ const Department = require("../relationalModels/department");
 const Result = require("../relationalModels/investigationResult");
 const NormalValue = require("../relationalModels/normalValue");
 const Nodal = require("../relationalModels/nodalMaster");
+const Profile = require("../relationalModels/profileInvMaster");
+const ProfileEntry = require("../relationalModels/profileMaster");
 
 // Associations
 
@@ -37,9 +39,6 @@ Hospital.hasMany(Patient, { foreignKey: "hospitalid", as: "patients" });
 Patient.belongsTo(Nodal, { foreignKey: "nodalid", as: "nodal" });
 Nodal.hasMany(Patient, { foreignKey: "nodalid", as: "patients" });
 
-
-
-
 //  Patient ↔ ABHA
 Patient.hasMany(ABHA, { foreignKey: "patient_id", as: "patientAbhas" });
 ABHA.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
@@ -55,6 +54,14 @@ Investigation.belongsToMany(Patient, {
   foreignKey: "id",
   otherKey: "patient_id",
 });
+
+// Profile associations
+Profile.belongsTo(ProfileEntry, { foreignKey: "profileid", as: "profileentry"});
+// ProfileEntry associations
+ProfileEntry.hasMany(Profile, { foreignKey: "profileid", as: "profiles" });
+
+Profile.hasMany(Investigation, { foreignKey: 'profile_id', as: 'investigations_in_profile' });
+Investigation.belongsTo(Profile, { foreignKey: 'profile_id', as: 'profile' });
 
 // Investigation - Department
 Investigation.belongsTo(Department, { foreignKey: "departmentId" });
@@ -93,5 +100,7 @@ module.exports = {
   Department,
   Result,
   NormalValue,
-  Nodal
+  Nodal,
+  Profile,
+  ProfileEntry,
 };
