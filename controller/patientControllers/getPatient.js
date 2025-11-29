@@ -521,33 +521,7 @@ const getPatientByMobile = async (req, res) => {
     /* Find Patients Matching the Query */
     const patients = await Patient.findAll({
       where: filters,
-      order: [["id", "ASC"]],
-      attributes: [
-        "id",
-        "p_title",
-        "p_name",
-        "p_lname",
-        "p_gender",
-        "p_age",
-        "p_years",
-        "p_month",
-        "p_days",
-        "p_blood",
-        "p_id",
-        "p_idnum",
-        "p_email",
-        "p_whtsap",
-        "p_guardian",
-        "p_guardianmob",
-        "p_guardadd",
-        "p_rltn",
-        "street",
-        "landmark",
-        "city",
-        "state",
-        "p_image",
-      ],
-    });
+      order: [["id", "ASC"]],});
 
     return res.status(200).json(patients);
   } catch (error) {
