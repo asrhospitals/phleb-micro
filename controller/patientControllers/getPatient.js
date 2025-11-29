@@ -9,7 +9,7 @@ const {
   Department,
   Result,
 } = require("../../model/associationModels/associations");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
 const getPatient = async (req, res) => {
@@ -318,7 +318,6 @@ const searchPatient = async (req, res) => {
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin"
-
     ) {
       return res.status(403).json({
         message:
@@ -519,11 +518,24 @@ const getPatientByMobile = async (req, res) => {
     }
 
     /* Find Patients Matching the Query */
-    const patients = await Patient.findAll({
-      where: filters,
-      order: [["id", "ASC"]],});
+   const patients = await Patient.findAll({
+  where: filters,
+  order: [["id", "ASC"]],
+});
 
-    return res.status(200).json(patients);
+const uniquePatients = [];
+const seenMobiles = new Set();
+
+for (const p of patients) {
+  if (!seenMobiles.has(p.p_mobile)) {
+    seenMobiles.add(p.p_mobile);
+    uniquePatients.push(p);
+  }
+}
+
+
+
+    return res.status(200).json(uniquePatients);
   } catch (error) {
     return res.status(500).json({
       message: `Something went wrong while searching patients ${error}`,
@@ -540,7 +552,6 @@ const getPatientById = async (req, res) => {
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin" &&
       roleType?.toLowerCase() !== "reception"
-
     ) {
       return res.status(403).json({
         message:
@@ -723,7 +734,8 @@ const searchBarcode = async (req, res) => {
       roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
-      message: "Access denied. Only phlebotomists, admins, and receptionists can access this resource."
+        message:
+          "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
       });
     }
 
@@ -736,7 +748,7 @@ const searchBarcode = async (req, res) => {
     }
 
     /* Find Barcode Matching the Query */
-  const result=  await Patient.findAndCountAll({
+    const result = await Patient.findAndCountAll({
       where: filters,
       include: [
         {
@@ -753,9 +765,8 @@ const searchBarcode = async (req, res) => {
     });
 
     if (result.count === 0) {
-  return res.status(404).json({ message: "No matching barcode found." });
-}
-
+      return res.status(404).json({ message: "No matching barcode found." });
+    }
 
     return res.status(200).json({ message: "Barcode found" });
   } catch (error) {
@@ -772,5 +783,5 @@ module.exports = {
   getPatientById,
   getTestData,
   searchPatientBy,
-  searchBarcode
+  searchBarcode,
 };
