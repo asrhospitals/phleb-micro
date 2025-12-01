@@ -387,15 +387,7 @@ const searchPatient = async (req, res) => {
         hospitalid: hospital.id,
         ...filters,
       },
-
-      attributes: [
-        "p_name",
-        "p_age",
-        "p_gender",
-        "p_regdate",
-        "p_lname",
-        "p_mobile",
-      ],
+      
       include: [
         {
           model: ABHA,
@@ -532,9 +524,6 @@ for (const p of patients) {
     uniquePatients.push(p);
   }
 }
-
-
-
     return res.status(200).json(uniquePatients);
   } catch (error) {
     return res.status(500).json({

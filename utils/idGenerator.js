@@ -7,7 +7,7 @@ const generateRegId = async () => {
   });
   
   const nextNumber = lastPatient ? lastPatient.id + 1 : 1;
-  return `REG${nextNumber.toString().padStart(6, '0')}`;  // REG000001
+  return `REG${nextNumber.toString().padStart(6, '0')}`;  // REG000001, REG000002, etc.
 };
 
 const generateVisitId = async (reg_id) => {
