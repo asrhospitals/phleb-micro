@@ -387,7 +387,7 @@ const searchPatient = async (req, res) => {
         hospitalid: hospital.id,
         ...filters,
       },
-      
+
       include: [
         {
           model: ABHA,
@@ -510,20 +510,20 @@ const getPatientByMobile = async (req, res) => {
     }
 
     /* Find Patients Matching the Query */
-   const patients = await Patient.findAll({
-  where: filters,
-  order: [["id", "ASC"]],
-});
+    const patients = await Patient.findAll({
+      where: filters,
+      order: [["id", "ASC"]],
+    });
 
-const uniquePatients = [];
-const seenMobiles = new Set();
+    const uniquePatients = [];
+    const seenMobiles = new Set();
 
-for (const p of patients) {
-  if (!seenMobiles.has(p.p_mobile)) {
-    seenMobiles.add(p.p_mobile);
-    uniquePatients.push(p);
-  }
-}
+    for (const p of patients) {
+      if (!seenMobiles.has(p.p_mobile)) {
+        seenMobiles.add(p.p_mobile);
+        uniquePatients.push(p);
+      }
+    }
     return res.status(200).json(uniquePatients);
   } catch (error) {
     return res.status(500).json({
