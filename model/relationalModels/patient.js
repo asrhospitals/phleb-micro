@@ -129,9 +129,9 @@ const Patient = sequelize.define(
       allowNull: false,
       defaultValue: "Center",
     },
-    reg_id:{
+    UHID:{
       type: DataTypes.STRING,
-      allowNull: false,
+      unique: true,
     },
     p_whtsap_alart:{
       type:DataTypes.BOOLEAN,
