@@ -252,7 +252,7 @@ const addPatientWithBillAndTest = async (req, res) => {
       message: "Patient Details Created Successfully. Tests added. Bill added",
     });
   } catch (err) {
-     res.status(500).json({message:"something went wrong",e:err});
+    res.status(500).json({ message: "something went wrong", e: err });
   }
 };
 
@@ -407,7 +407,7 @@ const addPPPPatientWithTest = async (req, res) => {
     }
 
     /* 10. Create PPP data */
-     const ppData = pptest.map((pp) => ({
+    const ppData = pptest.map((pp) => ({
       ...pp,
       pid,
     }));
@@ -440,7 +440,8 @@ const addPPPPatientWithTest = async (req, res) => {
       .status(201)
       .json({ message: `PPP Registration successfull.UHID is ${uhid}` });
   } catch (err) {
-    res.status(500).json({message:"something went wrong",e:err});
+    await transaction.rollback();
+    res.status(500).json({ message: "something went wrong", e: err });
   }
 };
 
@@ -556,7 +557,8 @@ const addGeneralPatientRegistration = async (req, res) => {
       .status(201)
       .json({ message: `Patient Registered Successfully with UHID ${uhid} ` });
   } catch (err) {
-    res.status(500).json({message:"something went wrong",e:err});
+    await transaction.rollback();
+    res.status(500).json({ message: "something went wrong", e: err });
   }
 };
 
