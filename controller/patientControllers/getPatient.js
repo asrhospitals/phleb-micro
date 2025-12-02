@@ -9,7 +9,7 @@ const {
   Department,
   Result,
 } = require("../../model/associationModels/associations");
-const { Op, Sequelize } = require("sequelize");
+const { Op } = require("sequelize");
 
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
 const getPatient = async (req, res) => {
@@ -316,8 +316,9 @@ const searchPatient = async (req, res) => {
     /* 1. Authorization */
     const { roleType } = req.user;
     if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
-      roleType?.toLowerCase() !== "admin"
+      roleType == "phlebotomist" &&
+      roleType == "admin" &&
+      roleType == "reception"
     ) {
       return res.status(403).json({
         message:
@@ -361,14 +362,17 @@ const searchPatient = async (req, res) => {
       };
     }
     if (pbarcode) {
-      filters["$patientPPModes.pbarcode$"] = pbarcode;
+      filters["$patientPPModes.pbarcode$"] = { [Op.iLike]: `%${pbarcode}%` };
     }
     if (billstatus) {
       filters["$patientBills.billstatus$"] = billstatus;
     }
     if (p_mobile) {
-      filters["$patient.p_mobile$"] = p_mobile;
+      filters["$patient.p_mobile$"] = {
+        [Op.like]: `%${p_mobile}%`,
+      };
     }
+
     if (startDate && endDate) {
       filters["$patient.p_regdate$"] = {
         [Op.between]: [new Date(startDate), new Date(endDate)],
