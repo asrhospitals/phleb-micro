@@ -24,7 +24,8 @@ const Patient = sequelize.define(
       type:DataTypes.STRING
     },
     p_mobile: {
-      type: DataTypes.STRING,
+      type: DataTypes.BIGINT,
+      maxlength:10,
       allowNull: false,
     },
     p_regdate: {
@@ -70,7 +71,8 @@ const Patient = sequelize.define(
       type:DataTypes.STRING
     },
     p_whtsap: {
-      type: DataTypes.STRING,
+      type: DataTypes.BIGINT,
+      maxlength:10
     },
     p_email: {
       type: DataTypes.STRING,
@@ -82,7 +84,8 @@ const Patient = sequelize.define(
       type: DataTypes.STRING,
     },
     p_guardianmob:{
-      type:DataTypes.STRING
+      type:DataTypes.BIGINT,
+      maxlength:10
     },
     p_guardadd:{
       type:DataTypes.STRING
@@ -126,7 +129,6 @@ const Patient = sequelize.define(
 
     reg_by: {
       type: DataTypes.ENUM("Node", "Center"),
-      allowNull: false,
       defaultValue: "Center",
     },
     UHID:{

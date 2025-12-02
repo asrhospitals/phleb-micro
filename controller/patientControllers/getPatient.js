@@ -336,11 +336,6 @@ const searchPatient = async (req, res) => {
       return res.status(404).json({ message: "Hospital not found" });
     }
 
-    /* 3. Pagination  */
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-    let offset = (page - 1) * limit;
-
     /* 4. Query Parameters */
     const {
       department,
@@ -351,6 +346,7 @@ const searchPatient = async (req, res) => {
       billstatus,
       startDate,
       endDate,
+      UHID,
     } = req.query;
     const filters = {};
     if (department) {
@@ -384,9 +380,14 @@ const searchPatient = async (req, res) => {
         [Op.iLike]: `%${p_name}%`,
       };
     }
+    if (UHID) {
+      filters["$patient.UHID$"] = {
+        [Op.iLike]: `%${UHID}%`,
+      };
+    }
 
     /* Find Patients Matching the Query */
-    const { count, rows } = await Patient.findAndCountAll({
+    const data = await Patient.findAndCountAll({
       where: {
         hospitalid: hospital.id,
         ...filters,
@@ -457,30 +458,19 @@ const searchPatient = async (req, res) => {
         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
       ],
       order: [["id", "ASC"]],
-      limit: limit,
-      offset: offset,
+
       distinct: true,
       col: "id",
       subQuery: false,
     });
 
-    const totalPages = Math.ceil(count / limit);
-
-    if (!rows) {
+    if (!data) {
       return res.status(404).json({
         message: "No data available ",
       });
     }
 
-    return res.status(200).json({
-      data: rows,
-      meta: {
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
-      },
-    });
+    return res.status(200).json(data);
   } catch (error) {
     return res.status(500).json({
       message: `Something went wrong while searching patients ${error}`,

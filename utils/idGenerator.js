@@ -2,7 +2,7 @@ const Patient=require('../model/relationalModels/patient');
 
 // Simple UHID generators during patient creation . Format : ORG/LOC/YEAR/SEQUENCE
 const { Op } = require("sequelize");
-
+/* Generate UHID Custom Format */
 const generateRegId = async (city) => {
   // Normalize city to first 3 letters, uppercase
   const LOCATION = city ? city.substring(0, 3).toUpperCase() : "UNK";
@@ -35,6 +35,7 @@ const generateRegId = async (city) => {
   return `${ORG}/${LOCATION}/${year}/${sequence}`;
 };
 
+/*Generate Barcode Custom Format */
 const generateVisitId = async (reg_id) => {
   const visitCount = await Visit.count({ where: { reg_id } });
   const nextVisit = visitCount + 1;

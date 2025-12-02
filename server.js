@@ -11,6 +11,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 const sequelize = require("./db/dbConnection");
 const verifyToken = require("./middlewares/authMiddileware");
 const role = require("./middlewares/roleMiddleware");
+const globalErrorHandler=require("./middlewares/globalErrorHandler");
 const PatientRoutes = require("./routes/patientRoutes");
 const ReportRoutes = require("./routes/reportRoutes");
 const UploadTRF = require("./controller/patientControllers/trf");
@@ -22,6 +23,8 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
   })
 );
+
+app.use(globalErrorHandler);
 
 // CORS Configuration - Allow hospital internal networks
 // app.use(

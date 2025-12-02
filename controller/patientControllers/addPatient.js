@@ -12,8 +12,8 @@ const { Op } = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 const { generateRegId } = require("../../utils/idGenerator");
 
-// A. Create Patient Test Along with Patient Registration
-const addPatient = async (req, res) => {
+/* 1. Create Patient Test Along with Patient Registration With Bill */
+const addPatientWithBillAndTest = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     /* 1. Authorization */
@@ -45,10 +45,7 @@ const addPatient = async (req, res) => {
       });
     }
 
-    // 3. Generate Registration ID and Visit ID
-    const reg_id = await generateRegId();
-
-    // 4. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
+    // 3. Add Patient That Store in Patient Table And Patient Test Table via link with OP Bill and PPMode
     const {
       u_name,
       country,
@@ -87,6 +84,11 @@ const addPatient = async (req, res) => {
       abha,
     } = req.body;
 
+    // 4. Generate Registration ID and Visit ID
+    const uhid = await generateRegId(city);
+
+    console.log(uhid);
+
     // 5. Create Patient Registration within transaction
     const createPatient = await Patient.create(
       {
@@ -123,7 +125,7 @@ const addPatient = async (req, res) => {
         p_pincode,
         hospitalid: req.user.hospitalid,
         nodalid: req.user.nodalid,
-        reg_id,
+        UHID: uhid,
       },
       { transaction }
     );
@@ -131,7 +133,7 @@ const addPatient = async (req, res) => {
     /// Get the Patient ID
     const patient_id = createPatient.id;
 
-    // 5. Check if additional data is provided and valid
+    // 6. Check if additional data is provided and valid
     const hasAdditionalData =
       investigation_ids &&
       investigation_ids.length &&
@@ -149,7 +151,7 @@ const addPatient = async (req, res) => {
       });
     }
 
-    // 6. Validate investigations exist
+    // 7. Validate investigations exist
     const investigations = await Investigation.findAll({
       where: {
         id: {
@@ -250,38 +252,315 @@ const addPatient = async (req, res) => {
       message: "Patient Details Created Successfully. Tests added. Bill added",
     });
   } catch (err) {
-    // Rollback transaction on any error
-    await transaction.rollback();
-    // Sequelize validation or unique constraint error
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.name === "SequelizeValidationError"
-    ) {
-      const errorDetails = err.errors?.map((e) => ({
-        field: e.path,
-        message: e.message,
-        value: e.value,
-      }));
-
-      return res.status(400).json({
-        message:
-          "Validation error occurred while creating the patient test order.",
-        errorType: err.name,
-        details: errorDetails,
-      });
-    }
-
-    // Other unexpected errors
-    return res.status(500).json({
-      message:
-        "Unexpected error occurred while creating the patient test order.",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
-// 2. Add Patient As Per Hospital for admin
+/* 2. PPP Patient Registration For Hospital Login */
+const addPPPPatientWithTest = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (roleType?.toLowerCase() !== "phlebotomist") {
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
+    }
 
+    /*2 Check if the user is authenticated and has a Hospitalid and Nodalid */
+    const { hospitalid, nodalid } = req.user;
+    const hospital = await Hospital.findByPk(hospitalid);
+    if (!hospital) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Hospital name mismatch or not found. Please check the hospital name in the URL.`,
+      });
+    }
+    const nodal = await Nodal.findByPk(nodalid);
+    if (!nodal) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Nodal name mismatch or not found. Please check the nodal name in the URL.`,
+      });
+    }
+
+    /* 3. Request Body */
+    const {
+      u_name,
+      country,
+      ref_source,
+      ref_details,
+      p_mobile,
+      p_regdate,
+      p_title,
+      p_name,
+      p_lname,
+      p_gender,
+      p_age,
+      p_years,
+      p_month,
+      p_days,
+      p_blood,
+      p_id,
+      p_idnum,
+      p_email,
+      p_whtsap,
+      p_guardian,
+      p_guardianmob,
+      p_guardadd,
+      p_rltn,
+      street,
+      landmark,
+      city,
+      state,
+      p_image,
+      p_whtsap_alart,
+      p_email_alart,
+      p_pincode,
+      investigation_ids,
+      pptest,
+    } = req.body;
+    /* 5. Generate Registration ID */
+    const uhid = await generateRegId(city);
+
+    /* 6. Generate Registration ID */
+    const createPatient = await Patient.create(
+      {
+        u_name,
+        country,
+        ref_source,
+        ref_details,
+        p_mobile,
+        p_regdate,
+        p_title,
+        p_name,
+        p_lname,
+        p_gender,
+        p_age,
+        p_years,
+        p_month,
+        p_days,
+        p_blood,
+        p_id,
+        p_idnum,
+        p_email,
+        p_whtsap,
+        p_guardian,
+        p_guardianmob,
+        p_guardadd,
+        p_rltn,
+        street,
+        landmark,
+        city,
+        state,
+        p_image,
+        p_whtsap_alart,
+        p_email_alart,
+        p_pincode,
+        hospitalid: req.user.hospitalid,
+        nodalid: req.user.nodalid,
+        UHID: uhid,
+      },
+      { transaction }
+    );
+
+    /* 7. Get the patient id */
+    const pid = createPatient.id;
+
+    /* 8. Add Investigations */
+    const investigations = await Investigation.findAll({
+      where: {
+        id: {
+          [Op.in]: investigation_ids,
+        },
+      },
+      transaction,
+    });
+    if (
+      !investigations.length ||
+      investigations.length !== investigation_ids.length
+    ) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message:
+          "Some investigations not found or invalid investigation IDs provided",
+      });
+    }
+    /* 9. Validate PPP Data */
+    const existingPPM = await PPPMode.findAll({
+      where: {
+        [Op.or]: [
+          { pbarcode: { [Op.in]: pptest.map((pp) => pp.pbarcode) } },
+          { popno: { [Op.in]: pptest.map((pp) => pp.popno) } },
+          { trfno: { [Op.in]: pptest.map((pp) => pp.trfno) } },
+        ],
+      },
+      transaction,
+    });
+    if (existingPPM.length) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message:
+          "Some PP Mode entries have duplicate barcodes or numbers or trfno or ip no",
+      });
+    }
+
+    /* 10. Create PPP data */
+     const ppData = pptest.map((pp) => ({
+      ...pp,
+      pid,
+    }));
+
+    await PPPMode.bulkCreate(ppData, { transaction });
+
+    /* 11. Create Bulk Test For the PPP Patient */
+    const patienttests = investigation_ids.map((investigation_id) => ({
+      pid,
+      investigation_id,
+      hospitalid,
+      nodalid,
+      status: "center",
+    }));
+
+    /* 12. Make Sure that test is added */
+    const hasInvestigations =
+      Array.isArray(investigation_ids) && investigation_ids.length > 0;
+    const hasTests = Array.isArray(pptest) && pptest.length > 0;
+
+    if (!hasInvestigations || !hasTests) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: "Test and PPP data are required for this PPP registration",
+      });
+    }
+    await PatientTest.bulkCreate(patienttests, { transaction });
+    await transaction.commit();
+    res
+      .status(201)
+      .json({ message: `PPP Registration successfull.UHID is ${uhid}` });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/* 3. General Registration */
+const addGeneralPatientRegistration = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (roleType?.toLowerCase() !== "phlebotomist") {
+      return res.status(403).json({
+        message: "Access denied. Only phlebotomists can access this resource.",
+      });
+    }
+
+    /*2 Check if the user is authenticated and has a Hospitalid and Nodalid */
+    const { hospitalid, nodalid } = req.user;
+    const hospital = await Hospital.findByPk(hospitalid);
+    if (!hospital) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Hospital name mismatch or not found. Please check the hospital name in the URL.`,
+      });
+    }
+    const nodal = await Nodal.findByPk(nodalid);
+    if (!nodal) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: `Nodal name mismatch or not found. Please check the nodal name in the URL.`,
+      });
+    }
+
+    /* 3. Request Body */
+    const {
+      u_name,
+      country,
+      ref_source,
+      ref_details,
+      p_mobile,
+      p_regdate,
+      p_title,
+      p_name,
+      p_lname,
+      p_gender,
+      p_age,
+      p_years,
+      p_month,
+      p_days,
+      p_blood,
+      p_id,
+      p_idnum,
+      p_email,
+      p_whtsap,
+      p_guardian,
+      p_guardianmob,
+      p_guardadd,
+      p_rltn,
+      street,
+      landmark,
+      city,
+      state,
+      p_image,
+      p_whtsap_alart,
+      p_email_alart,
+      p_pincode,
+    } = req.body;
+    /* 5. Generate Registration ID */
+    const uhid = await generateRegId(city);
+
+    /* 6. Generate Registration ID */
+    await Patient.create(
+      {
+        u_name,
+        country,
+        ref_source,
+        ref_details,
+        p_mobile,
+        p_regdate,
+        p_title,
+        p_name,
+        p_lname,
+        p_gender,
+        p_age,
+        p_years,
+        p_month,
+        p_days,
+        p_blood,
+        p_id,
+        p_idnum,
+        p_email,
+        p_whtsap,
+        p_guardian,
+        p_guardianmob,
+        p_guardadd,
+        p_rltn,
+        street,
+        landmark,
+        city,
+        state,
+        p_image,
+        p_whtsap_alart,
+        p_email_alart,
+        p_pincode,
+        hospitalid: req.user.hospitalid,
+        nodalid: req.user.nodalid,
+        UHID: uhid,
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    res
+      .status(201)
+      .json({ message: `Patient Registered Successfully with UHID ${uhid} ` });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// // 2. Add Patient As Per Hospital for admin
 const createPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -496,36 +775,13 @@ const createPatient = async (req, res) => {
       message: "Patient Details Created Successfully. Tests added. Bill added",
     });
   } catch (err) {
-    await transaction.rollback();
-    // Sequelize validation or unique constraint error
-    if (
-      err.name === "SequelizeUniqueConstraintError" ||
-      err.name === "SequelizeValidationError"
-    ) {
-      const errorDetails = err.errors?.map((e) => ({
-        field: e.path,
-        message: e.message,
-        value: e.value,
-      }));
-
-      return res.status(400).json({
-        message:
-          "Validation error occurred while creating the patient test order.",
-        errorType: err.name,
-        details: errorDetails,
-      });
-    }
-
-    // Other unexpected errors
-    return res.status(500).json({
-      message:
-        "Unexpected error occurred while creating the patient test order.",
-      error: err.message,
-    });
+    next(err);
   }
 };
 
 module.exports = {
-  addPatient,
   createPatient,
+  addGeneralPatientRegistration,
+  addPPPPatientWithTest,
+  addPatientWithBillAndTest,
 };

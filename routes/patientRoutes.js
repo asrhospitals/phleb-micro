@@ -1,14 +1,38 @@
 const Router = require("express");
-const { updateTestStatus } = require("../controller/patientControllers/updateTestStatus");
-const { addPatient, createPatient } = require("../controller/patientControllers/addPatient");
-const {getPatient,searchPatient,getPatientByMobile,getPatientById, getTestData, searchPatientBy, searchBarcode} = require("../controller/patientControllers/getPatient");
-const { updatePatientInfo } = require("../controller/patientControllers/updatePatient");
+const {
+  updateTestStatus,
+} = require("../controller/patientControllers/updateTestStatus");
+const {
+  createPatient,
+  addGeneralPatientRegistration,
+  addPPPPatientWithTest,
+  addPatientWithBillAndTest,
+} = require("../controller/patientControllers/addPatient");
+const {
+  getPatient,
+  searchPatient,
+  getPatientByMobile,
+  getPatientById,
+  getTestData,
+  searchPatientBy,
+  searchBarcode,
+} = require("../controller/patientControllers/getPatient");
+const {
+  updatePatientInfo,
+} = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
 const router = Router();
 
 // 1. Add Patient With Tests for Phlebotomist/Hospital/Center
-router.route("/add-patient-test").post(addPatient);
+router.route("/general-patient-registration").post(addGeneralPatientRegistration);
+
+// 2. Add Patient with PPP Registartion
+router.route("/ppp-patient-registration").post(addPPPPatientWithTest);
+
+// 3. Add Patient With Bill and Test
+
+router.route("/bill-patient-registartion").post(addPatientWithBillAndTest);
 
 // 2.  Add Patient With Tests for Admin
 router.route("/create-patient").post(createPatient);
@@ -35,14 +59,12 @@ router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);
 router.route("/send-tests").put(updateTestStatus);
 
 // 10. Search Test by Test name or Shortcode
-router.route("/search-test").get(searchTest);   
+router.route("/search-test").get(searchTest);
 
 // 11. Search Patient For Admin By Hospital id and Date Filter
 router.route("/get-data/:hospitalid").get(searchPatientBy);
 
 // 12. Search Barcode
 router.route("/search-code").get(searchBarcode);
-
-
 
 module.exports = router;

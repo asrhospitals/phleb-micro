@@ -25,7 +25,7 @@ const PatientTest = sequelize.define("patient_test", {
       key: "id",
     },
   },
-  patient_id: {
+  pid: {
     type: DataTypes.INTEGER,
     references: {
       model: Patient,

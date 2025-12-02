@@ -13,7 +13,7 @@ const PPModeTest = sequelize.define(
     trfno: { type: DataTypes.INTEGER, allowNull: false, unique: true },
     remark: { type: DataTypes.STRING, allowNull: false },
     attatchfile: { type: DataTypes.STRING },
-    patient_id: { type: DataTypes.INTEGER, allowNull: false },
+    pid: { type: DataTypes.INTEGER, allowNull: false },
   },
   { timestamps: false }
 );
