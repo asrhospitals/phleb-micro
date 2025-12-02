@@ -252,7 +252,7 @@ const addPatientWithBillAndTest = async (req, res) => {
       message: "Patient Details Created Successfully. Tests added. Bill added",
     });
   } catch (err) {
-    next(err);
+     res.status(500).json({message:"something went wrong",e:err});
   }
 };
 
@@ -440,7 +440,7 @@ const addPPPPatientWithTest = async (req, res) => {
       .status(201)
       .json({ message: `PPP Registration successfull.UHID is ${uhid}` });
   } catch (err) {
-    next(err);
+    res.status(500).json({message:"something went wrong",e:err});
   }
 };
 
@@ -556,7 +556,7 @@ const addGeneralPatientRegistration = async (req, res) => {
       .status(201)
       .json({ message: `Patient Registered Successfully with UHID ${uhid} ` });
   } catch (err) {
-    next(err);
+    res.status(500).json({message:"something went wrong",e:err});
   }
 };
 
