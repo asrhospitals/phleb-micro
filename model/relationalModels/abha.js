@@ -13,7 +13,7 @@ const ABHA = sequelize.define(
       validate: { isNumeric: true, len: [10] },
     },
     abha: { type: DataTypes.BIGINT, unique: true },
-    patient_id: {
+    pid: {
       type: DataTypes.INTEGER,
       references: { model: "patients", key: "id" },
     },

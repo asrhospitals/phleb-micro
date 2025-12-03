@@ -36,11 +36,11 @@ const generateRegId = async (city) => {
 };
 
 /*Generate Barcode Custom Format */
-const generateVisitId = async (reg_id) => {
+const generateBarcode = async (reg_id) => {
   const visitCount = await Visit.count({ where: { reg_id } });
   const nextVisit = visitCount + 1;
   
   return `V${nextVisit.toString().padStart(4, '0')}`;  // V0001, V0002, etc.
 };
 
-module.exports = { generateRegId, generateVisitId };
+module.exports = { generateRegId, generateBarcode };

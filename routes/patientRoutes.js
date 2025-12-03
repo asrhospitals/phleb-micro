@@ -4,28 +4,34 @@ const {
 } = require("../controller/patientControllers/updateTestStatus");
 const {
   createPatient,
-  addGeneralPatientRegistration,
   addPPPPatientWithTest,
-  addPatientWithBillAndTest,
-} = require("../controller/patientControllers/addPatient");
+} = require("../controller/patientControllers/addPPPPatientRegistration");
 const {
   getPatient,
   searchPatient,
   getPatientByMobile,
   getPatientById,
   getTestData,
-  searchPatientBy,
   searchBarcode,
+  searchPatientBy,
 } = require("../controller/patientControllers/getPatient");
 const {
   updatePatientInfo,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
+const {
+  addPatientWithBillAndTest,
+} = require("../controller/patientControllers/patientRegistrationWithBill");
+const {
+  addGeneralPatientRegistration,
+} = require("../controller/patientControllers/generalPatientRegistration");
 
 const router = Router();
 
 // 1. Add Patient With Tests for Phlebotomist/Hospital/Center
-router.route("/general-patient-registration").post(addGeneralPatientRegistration);
+router
+  .route("/general-patient-registration")
+  .post(addGeneralPatientRegistration);
 
 // 2. Add Patient with PPP Registartion
 router.route("/ppp-patient-registration").post(addPPPPatientWithTest);
@@ -34,8 +40,6 @@ router.route("/ppp-patient-registration").post(addPPPPatientWithTest);
 
 router.route("/bill-patient-registartion").post(addPatientWithBillAndTest);
 
-// 2.  Add Patient With Tests for Admin
-router.route("/create-patient").post(createPatient);
 
 // 3. Get Patient Data of a Hospital/Center
 router.route("/get-patient-data/:hospitalid").get(getPatient);
@@ -50,7 +54,7 @@ router.route("/search-patient/:hospitalid").get(searchPatient);
 router.route("/get-data-mobile").get(getPatientByMobile);
 
 // 7. Get Test Data
-router.route("/get-patient-test/:hospitalid").get(getTestData);
+router.route("/get-patient-test-data/:hospitalid").get(getTestData);
 
 // 8. Update Patient Infographic Data
 router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);

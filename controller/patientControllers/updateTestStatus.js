@@ -16,7 +16,7 @@ const updateTestStatus = async (req, res) => {
 
     // Step 1: Find tests with patient_ids AND investigation.test_collection = "No"
     const tests = await PatientTest.findAll({
-      where: { patient_id: patient_ids },
+      where: { pid: patient_ids },
       include: [
         {
           model: Investigation,

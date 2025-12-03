@@ -11,96 +11,108 @@ const NormalValue = require("../relationalModels/normalValue");
 const Nodal = require("../relationalModels/nodalMaster");
 const ProfileInv = require("../relationalModels/profileInvMaster");
 const ProfileMaster = require("../relationalModels/profileMaster");
+const OPPaymentDetail=require("../relationalModels/opPaymentDetails");
 
 // Associations
 
 // Patient ↔ PatientTest
-Patient.hasMany(PatientTest, { foreignKey: "patient_id", as: "patientTests" });
-PatientTest.belongsTo(Patient, { foreignKey: "patient_id", as: "patient",targetKey:'id' });
+Patient.hasMany(PatientTest, { foreignKey: "pid", as: "patientTests" });
+PatientTest.belongsTo(Patient, { foreignKey: "pid", as: "patient", targetKey: "id" });
 
-//  Investigation ↔ PatientTest
-Investigation.hasMany(PatientTest, { foreignKey: "investigation_id",as: "investigationTests",});
-PatientTest.belongsTo(Investigation, {foreignKey: "investigation_id",as: "investigation",});
+// Patient ↔ OPBill
+Patient.hasMany(OPBill, { foreignKey: "pid", as: "patientBills" });
+OPBill.belongsTo(Patient, { foreignKey: "pid", as: "patient" });
+
+// Patient ↔ PPPMode
+Patient.hasMany(PPPMode, { foreignKey: "pid", as: "patientPPModes" });
+PPPMode.belongsTo(Patient, { foreignKey: "pid", as: "patient" });
+
+// Patient ↔ ABHA
+Patient.hasMany(ABHA, { foreignKey: "pid", as: "patientAbhas" });
+ABHA.belongsTo(Patient, { foreignKey: "pid", as: "patient" });
 
 
-//  Patient ↔ OPBill (ONLY - remove hospital relationship)
-Patient.hasMany(OPBill, { foreignKey: "patient_id", as: "patientBills" });
-OPBill.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
+// Investigation ↔ PatientTest
+Investigation.hasMany(PatientTest, { foreignKey: "investigation_id", as: "investigationTests" });
+PatientTest.belongsTo(Investigation, { foreignKey: "investigation_id", as: "investigation" });
 
-//  Patient ↔ PPPMode (ONLY - remove hospital relationship)
-Patient.hasMany(PPPMode, { foreignKey: "patient_id", as: "patientPPModes" });
-PPPMode.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
-//  Patient ↔ Hospital
+// Patient ↔ Hospital
 Patient.belongsTo(Hospital, { foreignKey: "hospitalid", as: "hospital" });
 Hospital.hasMany(Patient, { foreignKey: "hospitalid", as: "patients" });
 
-//  Patient ↔ Nodal
+// Patient ↔ Nodal
 Patient.belongsTo(Nodal, { foreignKey: "nodalid", as: "nodal" });
 Nodal.hasMany(Patient, { foreignKey: "nodalid", as: "patients" });
 
-//  Patient ↔ ABHA
-Patient.hasMany(ABHA, { foreignKey: "patient_id", as: "patientAbhas" });
-ABHA.belongsTo(Patient, { foreignKey: "patient_id", as: "patient" });
 
-//  Patient - Investigation many-to-many via PatientTest
+// A single bill (OPBill) can have multiple payment details (OPPaymentDetail)
+OPBill.hasMany(OPPaymentDetail, { foreignKey: 'op_bill_id', as: 'Payments' });
+// A payment detail (OPPaymentDetail) belongs to one bill (OPBill)
+OPPaymentDetail.belongsTo(OPBill, { foreignKey: 'op_bill_id', as: 'Bill' });
+
+
+
+// Patient ↔ Investigation (many-to-many via PatientTest)
 Patient.belongsToMany(Investigation, {
   through: PatientTest,
-  foreignKey: "patient_id",
-  otherKey: "id",
+  foreignKey: "pid",
+  otherKey: "investigation_id",   // ✅ corrected
 });
 Investigation.belongsToMany(Patient, {
   through: PatientTest,
-  foreignKey: "id",
-  otherKey: "patient_id",
+  foreignKey: "investigation_id", // ✅ corrected
+  otherKey: "pid",
 });
 
 // Profile associations
 ProfileInv.belongsTo(ProfileMaster, {
   foreignKey: "profileid",
-  as: "profile", // singular
+  as: "profile",
 });
-
 ProfileMaster.hasMany(ProfileInv, {
   foreignKey: "profileid",
-  as: "profileInvs", // plural
+  as: "profileInvs",
 });
 
-// ProfileInv → Investigation
+// ProfileInv ↔ Investigation
 ProfileInv.belongsTo(Investigation, {
-  foreignKey: "investigationids",   // column in ProfileInv that points to Investigation.id
-  as: "investigation"
-});
-
-Investigation.hasMany(ProfileInv, {
   foreignKey: "investigationids",
-  as: "profileInvs"
-});
-
-
-
-// Investigation - Department
-Investigation.belongsTo(Department, { foreignKey: "departmentId" });
-Department.hasMany(Investigation, { foreignKey: "departmentId" });
-
-Investigation.hasMany(Result, {
-  foreignKey: "investigationId",
-  as: "results",
-});
-Result.belongsTo(Investigation, {
-  foreignKey: "investigationId",
   as: "investigation",
 });
+Investigation.hasMany(ProfileInv, {
+  foreignKey: "investigationids",
+  as: "profileInvs",
+});
 
-// 2. Result → NormalValues
-Result.hasMany(NormalValue, {
-  foreignKey: "resultId",
-  as: "normalValues",
-});
-NormalValue.belongsTo(Result, {
-  foreignKey: "resultId",
-  as: "result",
-});
+// Investigation ↔ Department
+Investigation.belongsTo(Department, { foreignKey: "departmentId", as: "department" }); // ✅ added alias
+Department.hasMany(Investigation, { foreignKey: "departmentId", as: "investigations" });
+
+// Investigation ↔ Result
+Investigation.hasMany(Result, { foreignKey: "investigationId", as: "results" });
+Result.belongsTo(Investigation, { foreignKey: "investigationId", as: "investigation" });
+
+// Result ↔ NormalValue
+Result.hasMany(NormalValue, { foreignKey: "resultId", as: "normalValues" });
+NormalValue.belongsTo(Result, { foreignKey: "resultId", as: "result" });
+
+module.exports = {
+  Patient,
+  Investigation,
+  PatientTest,
+  Hospital,
+  OPBill,
+  PPPMode,
+  ABHA,
+  Department,
+  Result,
+  NormalValue,
+  Nodal,
+  ProfileInv,
+  ProfileMaster,
+  OPPaymentDetail
+};
 
 
 

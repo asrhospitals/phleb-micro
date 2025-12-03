@@ -8,7 +8,9 @@ const {
   ABHA,
   Department,
   Result,
+  
 } = require("../../model/associationModels/associations");
+const OPPaymentDetail=require("../../model/relationalModels/opPaymentDetails");
 const { Op } = require("sequelize");
 
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
@@ -96,14 +98,23 @@ const getPatient = async (req, res) => {
           as: "patientBills",
           attributes: [
             "ptotal",
-            "pdisc",
-            "pamt",
-            "pamtrcv",
-            "pamtdue",
-            "pamtmode",
-            "pamtmthd",
-            "billstatus",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
             "pnote",
+            "billstatus",
+            "review_status",
+            "review_days",
+          ],
+          include: [
+            {
+              model: OPPaymentDetail,
+              as: "Payments",
+              attributes: ["op_bill_id", "payment_method", "payment_amount"],
+            },
           ],
         },
         {
@@ -229,7 +240,7 @@ const getTestData = async (req, res) => {
         {
           model: PPPMode,
           as: "patientPPModes",
-          required: false,
+          required: true,
           attributes: [
             "remark",
             "attatchfile",
@@ -243,6 +254,7 @@ const getTestData = async (req, res) => {
           model: PatientTest,
           as: "patientTests",
           where: { status: "center" },
+          required: false,
           attributes: [
             "id",
             "status",
@@ -288,7 +300,7 @@ const getTestData = async (req, res) => {
 
     const totalPages = Math.ceil(count / limit);
 
-    if (!rows) {
+    if (rows.length === 0) {
       return res.status(404).json({
         message: "No data available for the given hospital and date.",
       });

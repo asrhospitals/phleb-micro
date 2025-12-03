@@ -9,43 +9,61 @@ const OPBill = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    ptotal: {
+    // Corresponds to 'Total' in the image
+    ptotal: { 
       type: DataTypes.FLOAT,
     },
-    pdisc: {
+    // Corresponds to 'Discount(%)' in the image (percentage value)
+    pdisc_percentage: { 
+      type: DataTypes.FLOAT, 
+      defaultValue: 0.00
+    },
+    // Corresponds to 'Discount' in the image (absolute amount)
+    pdisc_amount: { 
+      type: DataTypes.FLOAT,
+      defaultValue: 0.00
+    },
+    // Corresponds to 'Amount Receivable'
+    pamt_receivable: { 
       type: DataTypes.FLOAT,
     },
-    pamt: {
+    // Corresponds to 'Amount Received' (Sum of all individual payments)
+    pamt_received_total: { 
       type: DataTypes.FLOAT,
+      defaultValue: 0.00
     },
-    pamtrcv: {
+    // Calculated: Amount Receivable - Amount Received Total
+    pamt_due: { 
       type: DataTypes.FLOAT,
+      defaultValue: 0.00
     },
-    pamtdue: {
-      type: DataTypes.FLOAT,
-    },
-    pamtmode: {
+    // Corresponds to 'Payment Mode' (Single / Multiple)
+    pamt_mode: { 
       type: DataTypes.ENUM,
       values: ["Single", "Multiple"],
     },
-    pamtmthd: {
-      type: DataTypes.ENUM,
-      values: ["Cash", "Credit", "DD", "Cheque", "UPI", "NEFT"],
-      defaultValue: "Cash"
-    },
-    pnote: {
+    // Corresponds to 'Additional Note'
+    pnote: { 
       type: DataTypes.STRING,
     },
     billstatus: {
       type: DataTypes.ENUM,
-      values: ["Paid", "Unpaid", "Pending"],
+      // 'Paid' if pamt_due is 0, 'Unpaid' if pamt_received_total is 0, 'Pending' otherwise
+      values: ["Paid", "Unpaid", "Pending"], 
       defaultValue: "Pending"
     },
-    patient_id: {
+    // Foreign key to the Patient table
+    pid: { 
       type: DataTypes.INTEGER,
       allowNull: false,
     },
-
+    // Additional fields from the image that don't need a new table
+    review_status: {
+      type: DataTypes.STRING, // For 'Review' input
+    },
+    review_days: {
+      type: DataTypes.INTEGER, // For 'Days' input
+    }
   },
   { timestamps: false }
 );
