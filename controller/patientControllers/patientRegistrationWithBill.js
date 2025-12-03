@@ -7,7 +7,6 @@ const {
   PPPMode,
   ABHA,
   Nodal,
-
 } = require("../../model/associationModels/associations");
 const OPPaymentDetail=require("../../model/relationalModels/opPaymentDetails");
 const { Op } = require("sequelize");
@@ -295,14 +294,14 @@ const addPatientWithBillAndTest = async (req, res) => {
     /* 7. Commit Transaction and Respond */
     await transaction.commit();
     res.status(201).json({
-      message: "PPP Registration successful.",
+      message: "Patient Registered Successfully",
       UHID: uhid,
     });
   } catch (err) {
     if (transaction.finished !== "committed") {
       await transaction.rollback();
     }
-    console.error("Error in addPPPPatientWithTest:", err);
+    console.error("Error in addPatientWithBillAndTest:", err);
     res.status(500).json({
       message: "Something went wrong during registration.",
       error: err.message || err,

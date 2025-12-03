@@ -8,9 +8,8 @@ const {
   ABHA,
   Department,
   Result,
-  
 } = require("../../model/associationModels/associations");
-const OPPaymentDetail=require("../../model/relationalModels/opPaymentDetails");
+const OPPaymentDetail = require("../../model/relationalModels/opPaymentDetails");
 const { Op } = require("sequelize");
 
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
@@ -405,7 +404,7 @@ const searchPatient = async (req, res) => {
         ...filters,
       },
 
-      include: [
+    include: [
         {
           model: ABHA,
           as: "patientAbhas",
@@ -416,14 +415,23 @@ const searchPatient = async (req, res) => {
           as: "patientBills",
           attributes: [
             "ptotal",
-            "pdisc",
-            "pamt",
-            "pamtrcv",
-            "pamtdue",
-            "pamtmode",
-            "pamtmthd",
-            "billstatus",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
             "pnote",
+            "billstatus",
+            "review_status",
+            "review_days",
+          ],
+          include: [
+            {
+              model: OPPaymentDetail,
+              as: "Payments",
+              attributes: ["op_bill_id", "payment_method", "payment_amount"],
+            },
           ],
         },
         {
@@ -438,33 +446,6 @@ const searchPatient = async (req, res) => {
             "trfno",
             "pop",
             "popno",
-          ],
-        },
-        {
-          model: PatientTest,
-          as: "patientTests",
-          attributes: [
-            "status",
-            "rejection_reason",
-            "test_created_date",
-            "test_updated_date",
-            "test_result",
-            "test_image",
-          ],
-          include: [
-            {
-              model: Investigation,
-              as: "investigation",
-              attributes: ["testname", "testmethod", "sampletype"],
-              include: [
-                {
-                  model: Department,
-                  as: "department",
-                  attributes: ["dptname"],
-                },
-                { model: Result, as: "results", attributes: ["unit"] },
-              ],
-            },
           ],
         },
         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
@@ -518,6 +499,52 @@ const getPatientByMobile = async (req, res) => {
     /* Find Patients Matching the Query */
     const patients = await Patient.findAll({
       where: filters,
+          include: [
+        {
+          model: ABHA,
+          as: "patientAbhas",
+          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "ptotal",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
+            "pnote",
+            "billstatus",
+            "review_status",
+            "review_days",
+          ],
+          include: [
+            {
+              model: OPPaymentDetail,
+              as: "Payments",
+              attributes: ["op_bill_id", "payment_method", "payment_amount"],
+            },
+          ],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+          ],
+        },
+        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      ],
       order: [["id", "ASC"]],
     });
 
@@ -560,6 +587,52 @@ const getPatientById = async (req, res) => {
     /* Find Patient By Id */
     const patient = await Patient.findOne({
       where: { id: patientid },
+          include: [
+        {
+          model: ABHA,
+          as: "patientAbhas",
+          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "ptotal",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
+            "pnote",
+            "billstatus",
+            "review_status",
+            "review_days",
+          ],
+          include: [
+            {
+              model: OPPaymentDetail,
+              as: "Payments",
+              attributes: ["op_bill_id", "payment_method", "payment_amount"],
+            },
+          ],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+          ],
+        },
+        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      ],
     });
 
     if (!patient) {
@@ -629,19 +702,28 @@ const searchPatientBy = async (req, res) => {
           as: "patientAbhas",
           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
         },
-        {
+      {
           model: OPBill,
           as: "patientBills",
           attributes: [
             "ptotal",
-            "pdisc",
-            "pamt",
-            "pamtrcv",
-            "pamtdue",
-            "pamtmode",
-            "pamtmthd",
-            "billstatus",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
             "pnote",
+            "billstatus",
+            "review_status",
+            "review_days",
+          ],
+          include: [
+            {
+              model: OPPaymentDetail,
+              as: "Payments",
+              attributes: ["op_bill_id", "payment_method", "payment_amount"],
+            },
           ],
         },
         {

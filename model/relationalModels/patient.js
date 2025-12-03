@@ -24,8 +24,8 @@ const Patient = sequelize.define(
       type:DataTypes.STRING
     },
     p_mobile: {
-      type: DataTypes.BIGINT,
-      maxlength:10,
+      type: DataTypes.STRING,
+   
       allowNull: false,
     },
     p_regdate: {
@@ -71,8 +71,8 @@ const Patient = sequelize.define(
       type:DataTypes.STRING
     },
     p_whtsap: {
-      type: DataTypes.BIGINT,
-      maxlength:10
+      type: DataTypes.STRING,
+    
     },
     p_email: {
       type: DataTypes.STRING,
@@ -84,7 +84,7 @@ const Patient = sequelize.define(
       type: DataTypes.STRING,
     },
     p_guardianmob:{
-      type:DataTypes.BIGINT,
+      type:DataTypes.STRING,
       maxlength:10
     },
     p_guardadd:{
@@ -107,8 +107,8 @@ const Patient = sequelize.define(
       type: DataTypes.STRING,
     },
     p_pincode: {
-      type: DataTypes.BIGINT,
-      maxlength: 6,
+      type: DataTypes.STRING,
+  
     },
     hospitalid: {
       type: DataTypes.INTEGER,
