@@ -8,15 +8,26 @@ const {
   ABHA,
   Department,
   Result,
+  InvDetail,
 } = require("../../model/associationModels/associations");
 const OPPaymentDetail = require("../../model/relationalModels/opPaymentDetails");
 const { Op } = require("sequelize");
 
+const patientService = require("./patientService/patient.service");
+
 // 1. Get Patient Data with Test + Bill + Abha + PPData + Trf
+/**
+ * @description Handles the GET request to retrieve a paginated list of patients
+ * for a specific hospital, registered on the current date.
+ * @param {object} req - Express request object (contains user context, hospitalid param, and query data)
+ * @param {object} res - Express response object
+ */
 const getPatient = async (req, res) => {
   try {
-    /* 1. Authorization */
-    const { roleType } = req.user;
+    /* 1. Authorization & Hospital ID Validation */
+    const { roleType, hospitalid: userHospitalId } = req.user;
+    const paramHospitalId = parseInt(req.params.hospitalid);
+
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin"
@@ -27,133 +38,40 @@ const getPatient = async (req, res) => {
       });
     }
 
-    /* 2. Check if Hospital ID is valid */
-    const { hospitalid } = req.params;
-
     let targetHospitalId;
 
-    if (req.user.roleType?.toLowerCase() === "admin") {
-      // Admins can only pass hospital id in the request
-      if (!hospitalid) {
+    if (roleType?.toLowerCase() === "admin") {
+      // Admins must provide the hospital ID in the URL params
+      if (!paramHospitalId) {
         return res
           .status(400)
           .json({ message: "Hospital ID is required for admin" });
       }
-      targetHospitalId = parseInt(hospitalid);
+      targetHospitalId = paramHospitalId;
     } else {
-      // Non-admin users must only use their own hospital id
-      if (parseInt(hospitalid) !== req.user.hospitalid) {
+      // Non-admin users must only use their own hospital ID
+      if (paramHospitalId !== userHospitalId) {
         return res.status(403).json({
           message: "Access denied. Hospital ID mismatch.",
         });
       }
-      targetHospitalId = req.user.hospitalid;
+      targetHospitalId = userHospitalId;
     }
 
-    const hospital = await Hospital.findOne({
-      where: { id: targetHospitalId },
-    });
+    /* 2. Execute Business Logic via Service Layer */
+    const result = await patientService.getPatientsByHospitalId(
+      targetHospitalId,
+      req.query
+    );
 
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital not found" });
-    }
-
-    /* 2. Pagination Details*/
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-    let offset = (page - 1) * limit;
-
-    /* 3. Get current date in 'YYYY-MM-DD' format */
-    const currentDate = new Date()
-      .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
-      .split(",")[0];
-
-    /* 5. Find Patient  */
-    const { count, rows } = await Patient.findAndCountAll({
-      where: {
-        p_regdate: currentDate,
-        hospitalid: targetHospitalId,
-        reg_by: "Center",
-      },
-      attributes: [
-        "id",
-        "p_name",
-        "p_age",
-        "p_gender",
-        "p_regdate",
-        "p_lname",
-        "p_mobile",
-        "reg_by",
-      ],
-
-      include: [
-        {
-          model: ABHA,
-          as: "patientAbhas",
-          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-        },
-        {
-          model: OPBill,
-          as: "patientBills",
-          attributes: [
-            "ptotal",
-            "pdisc_percentage",
-            "pdisc_amount",
-            "pamt_receivable",
-            "pamt_received_total",
-            "pamt_due",
-            "pamt_mode",
-            "pnote",
-            "billstatus",
-            "review_status",
-            "review_days",
-          ],
-          include: [
-            {
-              model: OPPaymentDetail,
-              as: "Payments",
-              attributes: ["op_bill_id", "payment_method", "payment_amount"],
-            },
-          ],
-        },
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: [
-            "pscheme",
-            "refdoc",
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-      ],
-      limit: limit,
-      offset: offset,
-      order: [["id", "ASC"]],
-      distinct: true,
-      col: "id",
-    });
-
-    const totalPages = Math.ceil(count / limit);
-
-    if (!rows) {
-      return res.status(404).json({
-        message: "No data available for the given hospital and date.",
-      });
-    }
-
+    /* 3. Respond to Client - Success */
     return res.status(200).json({
-      data: rows,
+      data: result.data,
       meta: {
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
+        totalItems: result.totalItems,
+        itemsPerPage: result.limit,
+        currentPage: result.page,
+        totalPages: result.totalPages,
       },
     });
   } catch (error) {
@@ -163,11 +81,18 @@ const getPatient = async (req, res) => {
   }
 };
 
-// 2. Get Test Data
+/**
+ * @description Handles the GET request to retrieve a paginated list of patient tests
+ * for a specific hospital, registered today and associated with PPP mode. (Refactored)
+ * @param {object} req - Express request object (contains user context, hospitalid param, and query data)
+ * @param {object} res - Express response object
+ */
 const getTestData = async (req, res) => {
   try {
-    /* 1. Authorization */
-    const { roleType } = req.user;
+    /* 1. Authorization & Hospital ID Validation */
+    const { roleType, hospitalid: userHospitalId } = req.user;
+    const paramHospitalId = parseInt(req.params.hospitalid);
+
     if (
       roleType?.toLowerCase() !== "phlebotomist" &&
       roleType?.toLowerCase() !== "admin"
@@ -178,140 +103,38 @@ const getTestData = async (req, res) => {
       });
     }
 
-    /* 2. Check if Hospital ID is valid */
-    const { hospitalid } = req.params;
-
     let targetHospitalId;
 
-    if (req.user.roleType?.toLowerCase() === "admin") {
-      // Admins can only pass hospital id in the request
-      if (!hospitalid) {
+    if (roleType?.toLowerCase() === "admin") {
+      if (!paramHospitalId) {
         return res
           .status(400)
           .json({ message: "Hospital ID is required for admin" });
       }
-      targetHospitalId = parseInt(hospitalid);
+      targetHospitalId = paramHospitalId;
     } else {
-      // Non-admin users must only use their own hospital id
-      if (parseInt(hospitalid) !== req.user.hospitalid) {
+      if (paramHospitalId !== userHospitalId) {
         return res.status(403).json({
           message: "Access denied. Hospital ID mismatch.",
         });
       }
-      targetHospitalId = req.user.hospitalid;
+      targetHospitalId = userHospitalId;
     }
 
-    const hospital = await Hospital.findOne({
-      where: { id: targetHospitalId },
-    });
+    /* 2. Execute Business Logic via Service Layer */
+    const result = await patientService.getPatientTestData(
+      targetHospitalId,
+      req.query
+    );
 
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital not found" });
-    }
-
-    /* 2. Pagination Details*/
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-    let offset = (page - 1) * limit;
-
-    /* 3. Get current date in 'YYYY-MM-DD' format */
-    const currentDate = new Date()
-      .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
-      .split(",")[0];
-
-    /* 5. Find Patient  */
-    const { count, rows } = await Patient.findAndCountAll({
-      where: {
-        p_regdate: currentDate,
-        hospitalid: targetHospitalId,
-      },
-      attributes: [
-        "id",
-        "p_name",
-        "p_age",
-        "p_gender",
-        "p_regdate",
-        "p_lname",
-        "p_mobile",
-        "reg_by",
-      ],
-      include: [
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          required: true,
-          attributes: [
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        {
-          model: PatientTest,
-          as: "patientTests",
-          where: { status: "center" },
-          required: false,
-          attributes: [
-            "id",
-            "status",
-            "rejection_reason",
-            "test_created_date",
-            "test_updated_date",
-            "test_result",
-            "test_image",
-          ],
-          include: [
-            {
-              model: Investigation,
-              as: "investigation",
-              where: { test_collection: "No" },
-              attributes: [
-                "testname",
-                "testmethod",
-                "sampletype",
-                "test_collection",
-              ],
-              include: [
-                {
-                  model: Department,
-                  as: "department",
-                  attributes: ["dptname"],
-                },
-                { model: Result, as: "results", attributes: ["unit"] },
-              ],
-            },
-          ],
-        },
-        {
-          model: Hospital,
-          as: "hospital",
-          attributes: ["hospitalname"],
-        },
-      ],
-      limit: limit,
-      offset: offset,
-      order: [["id", "ASC"]],
-      subQuery: false,
-    });
-
-    const totalPages = Math.ceil(count / limit);
-
-    if (rows.length === 0) {
-      return res.status(404).json({
-        message: "No data available for the given hospital and date.",
-      });
-    }
-
+    /* 3. Respond to Client - Success */
     return res.status(200).json({
-      data: rows,
+      data: result.data,
       meta: {
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
+        totalItems: result.totalItems,
+        itemsPerPage: result.limit,
+        currentPage: result.page,
+        totalPages: result.totalPages,
       },
     });
   } catch (error) {
@@ -321,24 +144,28 @@ const getTestData = async (req, res) => {
   }
 };
 
-// 3. Search Patient Details
+/**
+ * @description Handles the GET request to search for patients based on complex filters. (Refactored)
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
 const searchPatient = async (req, res) => {
   try {
     /* 1. Authorization */
     const { roleType } = req.user;
+    // Fixed: Changed && to || (OR logic)
     if (
-      roleType == "phlebotomist" &&
-      roleType == "admin" &&
-      roleType == "reception"
+      roleType !== "phlebotomist" &&
+      roleType !== "admin" &&
+      roleType !== "reception"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
+          "Access denied. Only phlebotomists, admins, and reception can access this resource.",
       });
     }
 
     /* 2. Hospital filters */
-
     const { hospitalid } = req.params;
 
     const hospital = await Hospital.findByPk(hospitalid);
@@ -347,64 +174,44 @@ const searchPatient = async (req, res) => {
       return res.status(404).json({ message: "Hospital not found" });
     }
 
-    /* 4. Query Parameters */
-    const {
-      department,
-      refdoc,
-      pbarcode,
-      p_mobile,
-      p_name,
-      billstatus,
-      startDate,
-      endDate,
-      UHID,
-    } = req.query;
+    /* 3. Query Parameters */
+    const { q, startDate, endDate } = req.query;
+    
+    // Fixed: Use OR conditions for search query
     const filters = {};
-    if (department) {
-      filters["$patientTests.investigation.department.dptname$"] = department;
-    }
-    if (refdoc) {
-      filters["$patientPPModes.refdoc$"] = {
-        [Op.iLike]: `%${refdoc}%`,
-      };
-    }
-    if (pbarcode) {
-      filters["$patientPPModes.pbarcode$"] = { [Op.iLike]: `%${pbarcode}%` };
-    }
-    if (billstatus) {
-      filters["$patientBills.billstatus$"] = billstatus;
-    }
-    if (p_mobile) {
-      filters["$patient.p_mobile$"] = {
-        [Op.like]: `%${p_mobile}%`,
-      };
+    const orConditions = [];
+
+    // Search across multiple fields with OR logic
+    if (q) {
+      orConditions.push(
+        { "$patientPPModes.pbarcode$": { [Op.iLike]: `%${q}%` } },
+        { "$patient.p_mobile$": { [Op.like]: `%${q}%` } },
+        { "$patient.p_name$": { [Op.iLike]: `%${q}%` } },
+        { "$patient.uhid$": { [Op.iLike]: `%${q}%` } }
+      );
     }
 
+    // Date range filter (separate from search)
     if (startDate && endDate) {
       filters["$patient.p_regdate$"] = {
         [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
-    if (p_name) {
-      filters["$patient.p_name$"] = {
-        [Op.iLike]: `%${p_name}%`,
-      };
-    }
-    if (UHID) {
-      filters["$patient.UHID$"] = {
-        [Op.iLike]: `%${UHID}%`,
-      };
+    // Combine filters
+    const whereClause = {
+      hospitalid: hospital.id, // Added back hospital filter
+      ...filters,
+    };
+
+    if (orConditions.length > 0) {
+      whereClause[Op.or] = orConditions;
     }
 
     /* Find Patients Matching the Query */
-    const data = await Patient.findAndCountAll({
-      where: {
-        hospitalid: hospital.id,
-        ...filters,
-      },
-
-    include: [
+    const data = await Patient.findAll({
+      where: whereClause,
+      include: [
         {
           model: ABHA,
           as: "patientAbhas",
@@ -448,25 +255,30 @@ const searchPatient = async (req, res) => {
             "popno",
           ],
         },
-        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+        { 
+          model: Hospital, 
+          as: "hospital", 
+          attributes: ["hospitalname"] 
+        },
       ],
       order: [["id", "ASC"]],
-
       distinct: true,
       col: "id",
       subQuery: false,
     });
 
-    if (!data) {
+    // Fixed: Check for empty array instead of falsy value
+    if (!data || data.length === 0) {
       return res.status(404).json({
-        message: "No data available ",
+        message: "No data available",
       });
     }
 
     return res.status(200).json(data);
   } catch (error) {
+    console.error("Error searching patients:", error); // Added logging
     return res.status(500).json({
-      message: `Something went wrong while searching patients ${error}`,
+      message: `Something went wrong while searching patients: ${error.message}`,
     });
   }
 };
@@ -499,7 +311,7 @@ const getPatientByMobile = async (req, res) => {
     /* Find Patients Matching the Query */
     const patients = await Patient.findAll({
       where: filters,
-          include: [
+      include: [
         {
           model: ABHA,
           as: "patientAbhas",
@@ -587,7 +399,7 @@ const getPatientById = async (req, res) => {
     /* Find Patient By Id */
     const patient = await Patient.findOne({
       where: { id: patientid },
-          include: [
+      include: [
         {
           model: ABHA,
           as: "patientAbhas",
@@ -702,7 +514,7 @@ const searchPatientBy = async (req, res) => {
           as: "patientAbhas",
           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
         },
-      {
+        {
           model: OPBill,
           as: "patientBills",
           attributes: [

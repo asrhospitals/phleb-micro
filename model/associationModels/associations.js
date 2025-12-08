@@ -12,6 +12,7 @@ const Nodal = require("../relationalModels/nodalMaster");
 const ProfileInv = require("../relationalModels/profileInvMaster");
 const ProfileMaster = require("../relationalModels/profileMaster");
 const OPPaymentDetail=require("../relationalModels/opPaymentDetails");
+const InvDetail = require("../relationalModels/invDisc");
 
 // Associations
 
@@ -50,6 +51,33 @@ Nodal.hasMany(Patient, { foreignKey: "nodalid", as: "patients" });
 OPBill.hasMany(OPPaymentDetail, { foreignKey: 'op_bill_id', as: 'Payments' });
 // A payment detail (OPPaymentDetail) belongs to one bill (OPBill)
 OPPaymentDetail.belongsTo(OPBill, { foreignKey: 'op_bill_id', as: 'Bill' });
+
+InvDetail.belongsTo(OPBill, {
+    foreignKey: 'op_bill_id', // Links to the 'id' in the patient_op_bills table
+    as: 'opBillHeader'        // Alias for easy retrieval
+});
+
+// We must also define the reverse association in the OPBill model:
+OPBill.hasMany(InvDetail, {
+    foreignKey: 'op_bill_id',
+    as: 'investigationDetails' // Used to fetch all items for a bill
+});
+
+
+// 2. Association with the Investigation Master Data (investigations)
+
+// InvDetail BELONGS TO Investigation (Many-to-One)
+// Each line item references one specific master test/service.
+InvDetail.belongsTo(Investigation, {
+    foreignKey: 'inv_id', // Links to the 'id' in the investigations table
+    as: 'investigation'   // Alias for easy retrieval of the test name, etc.
+});
+
+// We must also define the reverse association in the Investigation model:
+Investigation.hasMany(InvDetail, {
+    foreignKey: 'inv_id',
+    as: 'billLineItems' // Used to see where this master test was billed
+});
 
 
 
@@ -111,7 +139,8 @@ module.exports = {
   Nodal,
   ProfileInv,
   ProfileMaster,
-  OPPaymentDetail
+  OPPaymentDetail,
+  InvDetail
 };
 
 

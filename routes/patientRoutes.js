@@ -2,10 +2,7 @@ const Router = require("express");
 const {
   updateTestStatus,
 } = require("../controller/patientControllers/updateTestStatus");
-const {
-  createPatient,
-  addPPPPatientWithTest,
-} = require("../controller/patientControllers/addPPPPatientRegistration");
+
 const {
   getPatient,
   searchPatient,
@@ -19,12 +16,12 @@ const {
   updatePatientInfo,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
-const {
-  addPatientWithBillAndTest,
-} = require("../controller/patientControllers/patientRegistrationWithBill");
+
 const {
   addGeneralPatientRegistration,
-} = require("../controller/patientControllers/generalPatientRegistration");
+  addPatientWithBillAndTest,
+  addPPPPatientWithTest,
+} = require("../controller/patientControllers/patientRegistration");
 
 const router = Router();
 
@@ -39,7 +36,6 @@ router.route("/ppp-patient-registration").post(addPPPPatientWithTest);
 // 3. Add Patient With Bill and Test
 
 router.route("/bill-patient-registartion").post(addPatientWithBillAndTest);
-
 
 // 3. Get Patient Data of a Hospital/Center
 router.route("/get-patient-data/:hospitalid").get(getPatient);

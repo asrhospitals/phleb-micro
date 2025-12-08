@@ -131,7 +131,7 @@ const Patient = sequelize.define(
       type: DataTypes.ENUM("Node", "Center"),
       defaultValue: "Center",
     },
-    UHID:{
+    uhid:{
       type: DataTypes.STRING,
       unique: true,
     },
