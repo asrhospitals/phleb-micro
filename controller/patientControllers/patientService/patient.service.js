@@ -1,4 +1,3 @@
-
 const {
   Patient,
   OPBill,
@@ -9,14 +8,36 @@ const {
   Hospital,
   Nodal,
   Department,
-  Result
-} = require("../../../model/associationModels/associations"); 
+  Result,
+} = require("../../../model/associationModels/associations");
 
-const OPPaymentDetail=require("../../../model/relationalModels/opPaymentDetails");
-const InvDetail=require('../../../model/relationalModels/invDisc');
-const { generateRegId } = require("../../../utils/idGenerator"); // Assuming you have a utility
-const  sequelize = require('../../../db/dbConnection');
+const OPPaymentDetail = require("../../../model/relationalModels/opPaymentDetails");
+const InvDetail = require("../../../model/relationalModels/invDisc");
+const { generateRegId } = require("../../../utils/idGenerator");
+const sequelize = require("../../../db/dbConnection");
 const { Op } = require("sequelize");
+const emailQueue = require("../../../queue/emailQueue");
+
+
+// --- New Helper Function (Add this near the top of your service file) ---
+async function fetchTestNames(investigationIds, transaction) {
+    if (!investigationIds || investigationIds.length === 0) return 'N/A';
+    
+    // Fetch the investigation records using the IDs
+    const investigations = await Investigation.findAll({
+        where: { id: { [Op.in]: investigationIds } },
+        attributes: ['testname'], // Fetch only the name field
+        transaction,
+    });
+    
+    // Map the results to a comma-separated string
+    return investigations
+        .map(inv => inv.testname || 'Test')
+        .join(', ');
+}
+
+
+
 
 
 /**
@@ -110,6 +131,77 @@ async function createPatientRegistration(userData, patientData) {
     // Execute all necessary bulk operations
     await Promise.all(bulkOperations);
 
+    // ---  ASYNCHRONOUS EMAIL NOTIFICATION INTEGRATION ---
+
+    const isOptedIn = restPatientData.p_email_alart;
+    const recipientEmail = restPatientData.p_email;
+
+if (isOptedIn && recipientEmail) {
+        // --- 5A. Determine Registration Type ---
+        let regType = "GENERAL";
+
+        const hasBill = opbill.length > 0;
+        const hasTests = investigation_ids.length > 0;
+        const hasPPP = pptest.length > 0;
+
+        let notificationDetails = {};
+        
+        // --- PRE-FETCH TEST NAMES IF ANY TESTS EXIST ---
+        let testNamesString = 'N/A';
+        if (hasTests) {
+            // This relies on the fetchTestNames helper function being available and correctly defined
+            testNamesString = await fetchTestNames(investigation_ids, transaction);
+        }
+        
+        if (hasBill && hasTests) {
+            // BILL_TEST (Highest Priority)
+            const billData = opbill[0];
+            
+            notificationDetails = {
+                regType: "BILL_TEST",
+                testDetails: {
+                    // FIX APPLIED: Use the pre-fetched string for consistency
+                    testName: testNamesString, 
+                    appointmentDate: restPatientData.p_regdate,
+                    location: hospitalid,
+                },
+                billDetails: {
+                    billId: createdBillId,
+                    amount: billData.pamt_received_total || billData.pamtrcv,
+                },
+            };
+        } else if (hasTests && hasPPP) {
+            // PPP_TEST (Second Highest Priority)
+            notificationDetails = {
+                regType: "PPP_TEST",
+                testDetails: {
+                    testname: testNamesString, // Already using the fetched string
+                    appointmentDate: restPatientData.p_regdate,
+                    location: hospitalid,
+                },
+            };
+        } else {
+            // GENERAL (Fallback)
+            notificationDetails = { regType: "GENERAL" };
+        }
+
+        // --- 5B. Enqueue the Job ---
+        const patientName = `${restPatientData.p_title || ""} ${
+            restPatientData.p_name
+        } ${restPatientData.p_lname || ""}`;
+
+        await emailQueue.add("registrationEmail", {
+            to: recipientEmail,
+            name: patientName,
+            username: uhid,
+            ...notificationDetails,
+        });
+
+        console.log(
+            `Email job enqueued for ${notificationDetails.regType} registration (UHID: ${uhid}).`
+        );
+    }
+
     await transaction.commit();
     return uhid;
   } catch (err) {
@@ -121,7 +213,6 @@ async function createPatientRegistration(userData, patientData) {
   }
 }
 
-
 /**
  * @description Retrieves a paginated list of patients for a specific hospital, filtered by today's registration date.
  * @param {number} targetHospitalId - The ID of the hospital to filter by.
@@ -130,138 +221,134 @@ async function createPatientRegistration(userData, patientData) {
  * @throws {Error} If the hospital ID is invalid or a database query fails.
  */
 async function getPatientsByHospitalId(targetHospitalId, queryParams) {
-    // 1. Validate Hospital Existence
-    const hospital = await Hospital.findOne({
-        where: { id: targetHospitalId },
-    });
+  // 1. Validate Hospital Existence
+  const hospital = await Hospital.findOne({
+    where: { id: targetHospitalId },
+  });
 
-    if (!hospital) {
-        // Throw a specific error that the controller can translate to 404
-        throw new Error("Hospital not found"); 
-    }
+  if (!hospital) {
+    // Throw a specific error that the controller can translate to 404
+    throw new Error("Hospital not found");
+  }
 
-    // 2. Pagination Details
-    const page = parseInt(queryParams.page) || 1;
-    const limit = parseInt(queryParams.limit) || 10;
-    const offset = (page - 1) * limit;
+  // 2. Pagination Details
+  const page = parseInt(queryParams.page) || 1;
+  const limit = parseInt(queryParams.limit) || 10;
+  const offset = (page - 1) * limit;
 
-    // 3. Get current date in 'YYYY-MM-DD' format (assuming this format is used in the DB)
-    const currentDate = new Date()
-        .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
-        .split(",")[0];
+  // 3. Get current date in 'YYYY-MM-DD' format (assuming this format is used in the DB)
+  const currentDate = new Date()
+    .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
+    .split(",")[0];
 
-    // 4. Find Patient with nested includes and pagination
-    const { count, rows } = await Patient.findAndCountAll({
-        where: {
-            p_regdate: currentDate,
-            hospitalid: targetHospitalId,
-            reg_by: "Center",
-        },
+  // 4. Find Patient with nested includes and pagination
+  const { count, rows } = await Patient.findAndCountAll({
+    where: {
+      p_regdate: currentDate,
+      hospitalid: targetHospitalId,
+      reg_by: "Center",
+    },
+    attributes: [
+      "id",
+      "p_name",
+      "p_age",
+      "p_gender",
+      "p_regdate",
+      "p_lname",
+      "p_mobile",
+      "reg_by",
+    ],
+    // The complex include structure is moved entirely to the service
+    include: [
+      {
+        model: ABHA,
+        as: "patientAbhas",
+        attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+      },
+      {
+        model: OPBill,
+        as: "patientBills",
         attributes: [
-            "id",
-            "p_name",
-            "p_age",
-            "p_gender",
-            "p_regdate",
-            "p_lname",
-            "p_mobile",
-            "reg_by",
+          "ptotal",
+          "pdisc_percentage",
+          "pdisc_amount",
+          "pamt_receivable",
+          "pamt_received_total",
+          "pamt_due",
+          "pamt_mode",
+          "pnote",
+          "billstatus",
+          "review_status",
+          "review_days",
         ],
-        // The complex include structure is moved entirely to the service
         include: [
-            {
-                model: ABHA,
-                as: "patientAbhas",
-                attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-            },
-            {
-                model: OPBill,
-                as: "patientBills",
-                attributes: [
-                    "ptotal",
-                    "pdisc_percentage",
-                    "pdisc_amount",
-                    "pamt_receivable",
-                    "pamt_received_total",
-                    "pamt_due",
-                    "pamt_mode",
-                    "pnote",
-                    "billstatus",
-                    "review_status",
-                    "review_days",
-                ],
-                include: [
-                    {
-                        model: OPPaymentDetail,
-                        as: "Payments",
-                        attributes: ["op_bill_id", "payment_method", "payment_amount"],
-                      
-                    },
-                  
-                    {
-                        model: InvDetail, 
-                        as: "investigationDetails", // Alias for InvDetail
-                        attributes: [
-                            "inv_id",
-                            "unit_price",
-                            "quantity",
-                            "discount_amount",
-                            "discount_percentage",
-                            "final_amount",
-                        ],
-                        // ADDED: Include the Investigation model to get the test name
-                        include: [
-                            {
-                                model: Investigation, 
-                                as: 'investigation', // Assuming the InvDetail association alias to Investigation is 'investigation'
-                                attributes: ['testname']
-                            }
-                        ]
-                    }
-                ],
-            },
-            {
-                model: PPPMode,
-                as: "patientPPModes",
-                attributes: [
-                    "pscheme",
-                    "refdoc",
-                    "remark",
-                    "attatchfile",
-                    "pbarcode",
-                    "trfno",
-                    "pop",
-                    "popno",
-                ],
-            },
-            { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+          {
+            model: OPPaymentDetail,
+            as: "Payments",
+            attributes: ["op_bill_id", "payment_method", "payment_amount"],
+          },
+
+          {
+            model: InvDetail,
+            as: "investigationDetails", // Alias for InvDetail
+            attributes: [
+              "inv_id",
+              "unit_price",
+              "quantity",
+              "discount_amount",
+              "discount_percentage",
+              "final_amount",
+            ],
+            // ADDED: Include the Investigation model to get the test name
+            include: [
+              {
+                model: Investigation,
+                as: "investigation", // Assuming the InvDetail association alias to Investigation is 'investigation'
+                attributes: ["testname"],
+              },
+            ],
+          },
         ],
-        limit: limit,
-        offset: offset,
-        order: [["id", "ASC"]],
-        distinct: true,
-        col: "id",
-    });
+      },
+      {
+        model: PPPMode,
+        as: "patientPPModes",
+        attributes: [
+          "pscheme",
+          "refdoc",
+          "remark",
+          "attatchfile",
+          "pbarcode",
+          "trfno",
+          "pop",
+          "popno",
+        ],
+      },
+      { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+    ],
+    limit: limit,
+    offset: offset,
+    order: [["id", "ASC"]],
+    distinct: true,
+    col: "id",
+  });
 
-    if (!rows || rows.length === 0) {
-        throw new Error("No data available for the given hospital and date.");
-    }
+  if (!rows || rows.length === 0) {
+    throw new Error("No data available for the given hospital and date.");
+  }
 
-    const totalPages = Math.ceil(count / limit);
+  const totalPages = Math.ceil(count / limit);
 
-    return {
-        data: rows,
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
-        limit: limit, 
-        page: page,
-    };
+  return {
+    data: rows,
+    totalItems: count,
+    itemsPerPage: limit,
+    currentPage: page,
+    totalPages: totalPages,
+    limit: limit,
+    page: page,
+  };
 }
-
-
-
 
 /**
  * @description Retrieves a paginated list of patients and their active tests (PPP mode only)
@@ -272,121 +359,119 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
  * @throws {Error} If the hospital is not found or no data is available.
  */
 async function getPatientTestData(targetHospitalId, queryParams) {
-    // 1. Validate Hospital Existence
-    const hospital = await Hospital.findOne({
-        where: { id: targetHospitalId },
-    });
+  // 1. Validate Hospital Existence
+  const hospital = await Hospital.findOne({
+    where: { id: targetHospitalId },
+  });
 
-    if (!hospital) {
-        throw new Error("Hospital not found");
-    }
+  if (!hospital) {
+    throw new Error("Hospital not found");
+  }
 
-    // 2. Pagination Details
-    const page = parseInt(queryParams.page) || 1;
-    const limit = parseInt(queryParams.limit) || 10;
-    const offset = (page - 1) * limit;
+  // 2. Pagination Details
+  const page = parseInt(queryParams.page) || 1;
+  const limit = parseInt(queryParams.limit) || 10;
+  const offset = (page - 1) * limit;
 
-    // 3. Get current date in 'YYYY-MM-DD' format
-    const currentDate = new Date()
-        .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
-        .split(",")[0];
+  // 3. Get current date in 'YYYY-MM-DD' format
+  const currentDate = new Date()
+    .toLocaleString("en-CA", { timeZone: "Asia/Kolkata" })
+    .split(",")[0];
 
-    // 4. Find Patient with nested includes and pagination (Moved from controller)
-    const { count, rows } = await Patient.findAndCountAll({
-        where: {
-            p_regdate: currentDate,
-            hospitalid: targetHospitalId,
-        },
+  // 4. Find Patient with nested includes and pagination (Moved from controller)
+  const { count, rows } = await Patient.findAndCountAll({
+    where: {
+      p_regdate: currentDate,
+      hospitalid: targetHospitalId,
+    },
+    attributes: [
+      "id",
+      "p_name",
+      "p_age",
+      "p_gender",
+      "p_regdate",
+      "p_lname",
+      "p_mobile",
+      "reg_by",
+    ],
+    include: [
+      {
+        model: PPPMode,
+        as: "patientPPModes",
+        required: true, // Only fetch Patients who have a PPP mode record
         attributes: [
-            "id",
-            "p_name",
-            "p_age",
-            "p_gender",
-            "p_regdate",
-            "p_lname",
-            "p_mobile",
-            "reg_by",
+          "remark",
+          "attatchfile",
+          "pbarcode",
+          "trfno",
+          "pop",
+          "popno",
+        ],
+      },
+      {
+        model: PatientTest,
+        as: "patientTests",
+        where: { status: "center" }, // Filter by status
+        required: false, // Patients can exist without a current 'center' test
+        attributes: [
+          "id",
+          "status",
+          "rejection_reason",
+          "test_created_date",
+          "test_updated_date",
+          "test_result",
+          "test_image",
         ],
         include: [
-            {
-                model: PPPMode,
-                as: "patientPPModes",
-                required: true, // Only fetch Patients who have a PPP mode record
-                attributes: [
-                    "remark",
-                    "attatchfile",
-                    "pbarcode",
-                    "trfno",
-                    "pop",
-                    "popno",
-                ],
-            },
-            {
-                model: PatientTest,
-                as: "patientTests",
-                where: { status: "center" }, // Filter by status
-                required: false, // Patients can exist without a current 'center' test
-                attributes: [
-                    "id",
-                    "status",
-                    "rejection_reason",
-                    "test_created_date",
-                    "test_updated_date",
-                    "test_result",
-                    "test_image",
-                ],
-                include: [
-                    {
-                        model: Investigation,
-                        as: "investigation",
-                        where: { test_collection: "No" }, // Filter investigations
-                        attributes: [
-                            "testname",
-                            "testmethod",
-                            "sampletype",
-                            "test_collection",
-                        ],
-                        include: [
-                            {
-                                model: Department,
-                                as: "department",
-                                attributes: ["dptname"],
-                            },
-                            { model: Result, as: "results", attributes: ["unit"] },
-                        ],
-                    },
-                ],
-            },
-            {
-                model: Hospital,
-                as: "hospital",
-                attributes: ["hospitalname"],
-            },
+          {
+            model: Investigation,
+            as: "investigation",
+            where: { test_collection: "No" }, // Filter investigations
+            attributes: [
+              "testname",
+              "testmethod",
+              "sampletype",
+              "test_collection",
+            ],
+            include: [
+              {
+                model: Department,
+                as: "department",
+                attributes: ["dptname"],
+              },
+              { model: Result, as: "results", attributes: ["unit"] },
+            ],
+          },
         ],
-        limit: limit,
-        offset: offset,
-        order: [["id", "ASC"]],
-        subQuery: false,
-    });
+      },
+      {
+        model: Hospital,
+        as: "hospital",
+        attributes: ["hospitalname"],
+      },
+    ],
+    limit: limit,
+    offset: offset,
+    order: [["id", "ASC"]],
+    subQuery: false,
+  });
 
-    if (!rows || rows.length === 0) {
-        throw new Error("No data available for the given hospital and date.");
-    }
+  if (!rows || rows.length === 0) {
+    throw new Error("No data available for the given hospital and date.");
+  }
 
-    const totalPages = Math.ceil(count / limit);
+  const totalPages = Math.ceil(count / limit);
 
-    return {
-        data: rows,
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
-        limit: limit,
-        page: page,
-    };
+  return {
+    data: rows,
+    totalItems: count,
+    itemsPerPage: limit,
+    currentPage: page,
+    totalPages: totalPages,
+    limit: limit,
+    page: page,
+  };
 }
-
-
 
 // ==========================================================
 // --- VALIDATION AND HELPER FUNCTIONS ---
