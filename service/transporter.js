@@ -4,9 +4,9 @@ const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   // Example using common configuration (e.g., for a corporate SMTP or Gmail/Outlook/SendGrid)
-  host: process.env.EMAIL_HOST,       // e.g., 'smtp.office365.com' or 'smtp.gmail.com'
-  port: process.env.EMAIL_PORT,       // e.g., 587 (for TLS) or 465 (for SSL)
-  secure: process.env.EMAIL_SECURE, // true for 465, false for other ports
+  host: "smtp.gmail.com",       // e.g., 'smtp.office365.com' or 'smtp.gmail.com'
+  port: 465,       // e.g., 587 (for TLS) or 465 (for SSL)
+  secure: true, // true for 465, false for other ports
   auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
