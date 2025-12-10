@@ -18,27 +18,20 @@ const sequelize = require("../../../db/dbConnection");
 const { Op } = require("sequelize");
 const emailQueue = require("../../../queue/emailQueue");
 
-
 // --- New Helper Function (Add this near the top of your service file) ---
 async function fetchTestNames(investigationIds, transaction) {
-    if (!investigationIds || investigationIds.length === 0) return 'N/A';
-    
-    // Fetch the investigation records using the IDs
-    const investigations = await Investigation.findAll({
-        where: { id: { [Op.in]: investigationIds } },
-        attributes: ['testname'], // Fetch only the name field
-        transaction,
-    });
-    
-    // Map the results to a comma-separated string
-    return investigations
-        .map(inv => inv.testname || 'Test')
-        .join(', ');
+  if (!investigationIds || investigationIds.length === 0) return "N/A";
+
+  // Fetch the investigation records using the IDs
+  const investigations = await Investigation.findAll({
+    where: { id: { [Op.in]: investigationIds } },
+    attributes: ["testname"], // Fetch only the name field
+    transaction,
+  });
+
+  // Map the results to a comma-separated string
+  return investigations.map((inv) => inv.testname || "Test").join(", ");
 }
-
-
-
-
 
 /**
  * Executes all necessary business logic to register a patient, optionally with bill and tests.
@@ -136,70 +129,69 @@ async function createPatientRegistration(userData, patientData) {
     const isOptedIn = restPatientData.p_email_alart;
     const recipientEmail = restPatientData.p_email;
 
-if (isOptedIn && recipientEmail) {
-        // --- 5A. Determine Registration Type ---
-        let regType = "GENERAL";
+    if (isOptedIn && recipientEmail) {
+      // --- 5A. Determine Registration Type ---
+      let regType = "GENERAL";
 
-        const hasBill = opbill.length > 0;
-        const hasTests = investigation_ids.length > 0;
-        const hasPPP = pptest.length > 0;
+      const hasBill = opbill.length > 0;
+      const hasTests = investigation_ids.length > 0;
+      const hasPPP = pptest.length > 0;
 
-        let notificationDetails = {};
-        
-        // --- PRE-FETCH TEST NAMES IF ANY TESTS EXIST ---
-        let testNamesString = 'N/A';
-        if (hasTests) {
-            // This relies on the fetchTestNames helper function being available and correctly defined
-            testNamesString = await fetchTestNames(investigation_ids, transaction);
-        }
-        
-        if (hasBill && hasTests) {
-            // BILL_TEST (Highest Priority)
-            const billData = opbill[0];
-            
-            notificationDetails = {
-                regType: "BILL_TEST",
-                testDetails: {
-                    // FIX APPLIED: Use the pre-fetched string for consistency
-                    testName: testNamesString, 
-                    appointmentDate: restPatientData.p_regdate,
-                    location: hospitalid,
-                },
-                billDetails: {
-                    billId: createdBillId,
-                    amount: billData.pamt_received_total || billData.pamtrcv,
-                },
-            };
-        } else if (hasTests && hasPPP) {
-            // PPP_TEST (Second Highest Priority)
-            notificationDetails = {
-                regType: "PPP_TEST",
-                testDetails: {
-                    testname: testNamesString, // Already using the fetched string
-                    appointmentDate: restPatientData.p_regdate,
-                    location: hospitalid,
-                },
-            };
-        } else {
-            // GENERAL (Fallback)
-            notificationDetails = { regType: "GENERAL" };
-        }
+      let notificationDetails = {};
 
-        // --- 5B. Enqueue the Job ---
-        const patientName = `${restPatientData.p_title || ""} ${
-            restPatientData.p_name
-        } ${restPatientData.p_lname || ""}`;
+      // --- PRE-FETCH TEST NAMES IF ANY TESTS EXIST ---
+      let testNamesString = "N/A";
+      if (hasTests) {
+        // This relies on the fetchTestNames helper function being available and correctly defined
+        testNamesString = await fetchTestNames(investigation_ids, transaction);
+      }
 
-        await emailQueue.add("registrationEmail", {
-            to: recipientEmail,
-            name: patientName,
-            username: uhid,
-            ...notificationDetails,
-        });
+      if (hasBill && hasTests) {
+        // BILL_TEST (Highest Priority)
+        const billData = opbill[0];
 
-        console.log(
-            `Email job enqueued for ${notificationDetails.regType} registration (UHID: ${uhid}).`
-        );
+        notificationDetails = {
+          regType: "BILL_TEST",
+          testDetails: {
+            // FIX APPLIED: Use the pre-fetched string for consistency
+            // testname: testNamesString,
+            appointmentDate: restPatientData.p_regdate,
+            location: hospitalid,
+          },
+          billDetails: {
+            amount: billData.pamt_receivable || billData.pamtrcv,
+          },
+        };
+      } else if (hasTests && hasPPP) {
+        // PPP_TEST (Second Highest Priority)
+        notificationDetails = {
+          regType: "PPP_TEST",
+          testDetails: {
+            // testname: testNamesString, // Already using the fetched string
+            appointmentDate: restPatientData.p_regdate,
+            location: hospitalid,
+          },
+        };
+      } else {
+        // GENERAL (Fallback)
+        notificationDetails = { regType: "GENERAL" };
+      }
+
+      // --- 5B. Enqueue the Job ---
+      const patientName = `${restPatientData.p_title || ""} ${
+        restPatientData.p_name
+      } ${restPatientData.p_lname || ""}`;
+
+      await emailQueue.add("registrationEmail", {
+        to: recipientEmail,
+        name: patientName,
+        username: uhid,
+        ...notificationDetails,
+      });
+
+      console.log(
+        `Email job enqueued for ${notificationDetails.regType} registration (UHID: ${uhid}).`
+      );
     }
 
     await transaction.commit();

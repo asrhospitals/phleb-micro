@@ -27,7 +27,7 @@ const OPPaymentDetail = sequelize.define(
     // Corresponds to 'Amount' for this specific payment
     payment_amount: { 
       type: DataTypes.FLOAT,
-      allowNull: false
+      allowNull: true
     }
   },
   { timestamps: false }

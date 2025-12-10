@@ -23,7 +23,6 @@ function generateEmailContent(data) {
         <div style="background-color: #e6f7ff; padding: 15px; border-radius: 4px; margin: 15px 0; border: 1px solid #b3d9ff;">
             <p><strong>Payment Status:</strong> Confirmed</p>
             <p><strong>Total Amount Paid:</strong> ${billDetails.amount || 'N/A'}</p>
-            <p><strong>Bill/Transaction ID:</strong> ${billDetails.billId || 'N/A'}</p>
         </div>
         <p>A formal receipt will be provided at the center.</p>
     ` : '';
@@ -33,17 +32,17 @@ function generateEmailContent(data) {
     let specificContent = ''; // Initialize specific content
 
     if (regType === 'BILL_TEST') {
-        subject = `Test & Payment Confirmed: ${testDetails.testname || 'Your Tests'}`;
+        subject = `Test & Payment Confirmed`;
         specificContent = `
             <p>Thank you for registering and completing your payment for laboratory services.</p>
             ${testDetailsHtml}
             ${billDetailsHtml}
-            <p>Your unique LIMS ID is: <strong>${username}</strong>.</p>
+            <p>Your unique UHID is: <strong>${username}</strong>.</p>
         `;
     } else if (regType === 'PPP_TEST' && testDetails) {
-        subject = `PPP Program & Test Confirmation: ${testDetails.testname || 'Your Tests'}`;
+        subject = `PPP Program & Test Confirmation`;
         specificContent = `
-            <p>Your registration for the **PPP Program** and your test has been confirmed.</p>
+            <p>Your registration for the PPP Program and your test has been confirmed.</p>
             ${testDetailsHtml}
             <p>Your unique UHID ID is: <strong>${username}</strong>.</p>
             <p>We will be in touch shortly with details regarding your PPP enrollment.</p>
