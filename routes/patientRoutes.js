@@ -14,6 +14,7 @@ const {
 } = require("../controller/patientControllers/getPatient");
 const {
   updatePatientInfo,
+  updateBillData,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -22,6 +23,7 @@ const {
   addPatientWithBillAndTest,
   addPPPPatientWithTest,
 } = require("../controller/patientControllers/patientRegistration");
+const { route } = require("../controller/patientControllers/trf");
 
 const router = Router();
 
@@ -66,5 +68,8 @@ router.route("/get-data/:hospitalid").get(searchPatientBy);
 
 // 12. Search Barcode
 router.route("/search-code").get(searchBarcode);
+
+// 13. Get Bill Data
+router.route("/get-patient-bill/:id").get(updateBillData);
 
 module.exports = router;
