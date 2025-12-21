@@ -232,6 +232,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
       reg_by: "Center",
     },
     attributes: [
+      "id",
       "p_name",
       "p_age",
       "p_gender",
