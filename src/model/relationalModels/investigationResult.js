@@ -15,7 +15,7 @@ const InvestigationResult = sequelize.define(
     normal_values: { type: DataTypes.STRING },
     showTrends: { type: DataTypes.BOOLEAN },
     defaultValue: { type: DataTypes.INTEGER },
-    investigationId: { type: DataTypes.INTEGER },
+    investigationid: { type: DataTypes.INTEGER },
   },
   { timestamps: false }
 );

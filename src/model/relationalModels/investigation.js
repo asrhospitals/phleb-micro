@@ -1,4 +1,4 @@
-const { DataTypes, QueryTypes } = require("sequelize");
+const { DataTypes} = require("sequelize");
 const sequelize = require("../../db/dbConnection");
 
 const Investigation = sequelize.define("investigation", {
@@ -144,6 +144,16 @@ const Investigation = sequelize.define("investigation", {
     type: DataTypes.ARRAY(DataTypes.INTEGER),
   },
 
+  // ---- Out Sourcing 
+
+  labname: {
+    type: DataTypes.ARRAY(DataTypes.STRING),
+  },
+  outsourceprice: {
+    type: DataTypes.ARRAY(DataTypes.INTEGER),
+  },
+
+
   tat: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -158,23 +168,31 @@ const Investigation = sequelize.define("investigation", {
     type: DataTypes.STRING,
   },
   status: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(),
   },
 
   // Instructions
   instruction: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
   interpretation: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
   remark: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
   },
     test_collection:{
     type:DataTypes.ENUM("Yes","No"),
     allowNull:false
-  }
+  },
+   reportid: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: "reporttypes", 
+      key: "id",
+    },
+  },
 },{timestamps:false});
 
 module.exports = Investigation;

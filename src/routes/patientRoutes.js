@@ -70,6 +70,6 @@ router.route("/get-data/:hospitalid").get(searchPatientBy);
 router.route("/search-code").get(searchBarcode);
 
 // 13. Get Bill Data
-router.route("/get-patient-bill/:id").get(updateBillData);
+router.route("/update-patient-bill/:id").put(updateBillData);
 
 module.exports = router;

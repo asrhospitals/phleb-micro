@@ -9,9 +9,9 @@ const {
   Nodal,
   Department,
   Result,
+  DerivedTestComponent,
 } = require("../../../model/associationModels/associations");
 
-const OPPaymentDetail = require("../../../model/relationalModels/opPaymentDetails");
 const InvDetail = require("../../../model/relationalModels/invDisc");
 const { generateRegId } = require("../../../utils/idGenerator");
 const sequelize = require("../../../db/dbConnection");
@@ -94,16 +94,7 @@ async function createPatientRegistration(userData, patientData) {
     // A. Create Bill, Payments, and Line Items (CONDITIONAL)
     if (opbill.length > 0) {
       const billData = opbill[0];
-      const { paymentDetails, invDetails = [] } = billData;
-      bulkOperations.push(
-        createBillingRecords(
-          pid,
-          billData,
-          paymentDetails,
-          invDetails,
-          transaction
-        )
-      );
+      bulkOperations.push(createBillingRecords(pid, billData, transaction));
     }
 
     // B. Create Test, PPP, and ABHA Records (CONDITIONAL)
@@ -241,7 +232,6 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
       reg_by: "Center",
     },
     attributes: [
-      "id",
       "p_name",
       "p_age",
       "p_gender",
@@ -261,46 +251,22 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
         model: OPBill,
         as: "patientBills",
         attributes: [
-          "ptotal",
-          "pdisc_percentage",
-          "pdisc_amount",
-          "pamt_receivable",
-          "pamt_received_total",
-          "pamt_due",
-          "pamt_mode",
-          "pnote",
-          "billstatus",
-          "review_status",
-          "review_days",
+        "ptotal",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
+            "pnote",
+            "billstatus",
+            "paymentDetails",
+            "invDetails",
+            "review_status",
+            "review_days",
+            "bill_date",
         ],
-        include: [
-          {
-            model: OPPaymentDetail,
-            as: "Payments",
-            attributes: ["op_bill_id", "payment_method", "payment_amount"],
-          },
-
-          {
-            model: InvDetail,
-            as: "investigationDetails", // Alias for InvDetail
-            attributes: [
-              "inv_id",
-              "unit_price",
-              "quantity",
-              "discount_amount",
-              "discount_percentage",
-              "final_amount",
-            ],
-            // ADDED: Include the Investigation model to get the test name
-            include: [
-              {
-                model: Investigation,
-                as: "investigation", // Assuming the InvDetail association alias to Investigation is 'investigation'
-                attributes: ["testname"],
-              },
-            ],
-          },
-        ],
+      
       },
       {
         model: PPPMode,
@@ -406,7 +372,6 @@ async function getPatientTestData(targetHospitalId, queryParams) {
         where: { status: "center" }, // Filter by status
         required: false, // Patients can exist without a current 'center' test
         attributes: [
-          "id",
           "status",
           "rejection_reason",
           "test_created_date",
@@ -432,6 +397,25 @@ async function getPatientTestData(targetHospitalId, queryParams) {
                 attributes: ["dptname"],
               },
               { model: Result, as: "results", attributes: ["unit"] },
+              {
+                model: DerivedTestComponent,
+                as: "components",
+                attributes: ["formula"],
+                include: [
+                  {
+                    model: Investigation,
+                    as: "childTest",
+                    attributes: ["testname"],
+                    include: [
+                      {
+                        model: Result,
+                        as: "results",
+                        attributes: ["unit"],
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
         ],
@@ -582,8 +566,6 @@ async function checkDuplicates(pptest, abha, transaction) {
 async function createBillingRecords(
   pid,
   billData,
-  paymentDetails,
-  invDetails,
   transaction
 ) {
   // Logic to prepare mainBillRecord
@@ -597,6 +579,8 @@ async function createBillingRecords(
     pamt_due: billData.pamt_due || billData.pamtdue,
     pamt_mode: billData.pamt_mode,
     pnote: billData.pnote,
+    paymentDetails: billData.paymentDetails,
+    invDetails: billData.invDetails,
     billstatus: billData.billstatus,
     review_status: billData.review_status, // New field from image
     review_days: billData.review_days, // New field from image
@@ -605,32 +589,32 @@ async function createBillingRecords(
   };
 
   const createdOPBill = await OPBill.create(mainBillRecord, { transaction });
-  const op_bill_id = createdOPBill.id;
+  // const op_bill_id = createdOPBill.id;
 
-  const bulkOperations = [];
+  // const bulkOperations = [];
 
-  // 1. Payment Details
-  if (paymentDetails && paymentDetails.length > 0) {
-    const paymentRecords = paymentDetails.map((payment) => ({
-      op_bill_id: op_bill_id,
-      payment_method: payment.payment_method || payment.pamtmthd,
-      payment_amount: payment.payment_amount || payment.pamt,
-    }));
-    bulkOperations.push(
-      OPPaymentDetail.bulkCreate(paymentRecords, { transaction })
-    );
-  }
+  // // 1. Payment Details
+  // if (paymentDetails && paymentDetails.length > 0) {
+  //   const paymentRecords = paymentDetails.map((payment) => ({
+  //     op_bill_id: op_bill_id,
+  //     payment_method: payment.payment_method || payment.pamtmthd,
+  //     payment_amount: payment.payment_amount || payment.pamt,
+  //   }));
+  //   bulkOperations.push(
+  //     OPPaymentDetail.bulkCreate(paymentRecords, { transaction })
+  //   );
+  // }
 
-  // 2. Inv Details (Line Items)
-  if (invDetails.length > 0) {
-    const invData = invDetails.map((inv) => ({
-      ...inv,
-      op_bill_id: op_bill_id,
-    }));
-    bulkOperations.push(InvDetail.bulkCreate(invData, { transaction }));
-  }
+  // // 2. Inv Details (Line Items)
+  // if (invDetails.length > 0) {
+  //   const invData = invDetails.map((inv) => ({
+  //     ...inv,
+  //     op_bill_id: op_bill_id,
+  //   }));
+  //   bulkOperations.push(InvDetail.bulkCreate(invData, { transaction }));
+  // }
 
-  await Promise.all(bulkOperations);
+  // await Promise.all(bulkOperations);
   return createdOPBill;
 }
 

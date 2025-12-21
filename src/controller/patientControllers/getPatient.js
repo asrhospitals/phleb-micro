@@ -10,7 +10,6 @@ const {
   Result,
   InvDetail,
 } = require("../../model/associationModels/associations");
-const OPPaymentDetail = require("../../model/relationalModels/opPaymentDetails");
 const { Op } = require("sequelize");
 
 const patientService = require("./patientService/patient.service");
@@ -230,15 +229,11 @@ const searchPatient = async (req, res) => {
             "pamt_mode",
             "pnote",
             "billstatus",
+            "paymentDetails",
+            "invDetails",
             "review_status",
             "review_days",
-          ],
-          include: [
-            {
-              model: OPPaymentDetail,
-              as: "Payments",
-              attributes: ["op_bill_id", "payment_method", "payment_amount"],
-            },
+            "bill_date",
           ],
         },
         {
@@ -418,15 +413,11 @@ const getPatientById = async (req, res) => {
             "pamt_mode",
             "pnote",
             "billstatus",
+            "paymentDetails",
+            "invDetails",
             "review_status",
             "review_days",
-          ],
-          include: [
-            {
-              model: OPPaymentDetail,
-              as: "Payments",
-              attributes: ["op_bill_id", "payment_method", "payment_amount"],
-            },
+            "bill_date",
           ],
         },
         {
