@@ -239,6 +239,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
       "p_lname",
       "p_mobile",
       "reg_by",
+      "uhid"
     ],
     // The complex include structure is moved entirely to the service
     include: [
@@ -351,6 +352,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
       "p_lname",
       "p_mobile",
       "reg_by",
+      "uhid"
     ],
     include: [
       {
