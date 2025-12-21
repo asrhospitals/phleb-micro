@@ -21,7 +21,7 @@ const NODE_ENV = process.env.NODE_ENV || "development";
 
 // 1. GLOBAL RATE LIMITING
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // Limit each IP to 100 requests per window
   standardHeaders: true,
   legacyHeaders: false,
