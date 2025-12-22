@@ -175,7 +175,7 @@ const searchPatient = async (req, res) => {
 
     /* 3. Query Parameters */
     const { q, startDate, endDate } = req.query;
-    
+
     // Fixed: Use OR conditions for search query
     const filters = {};
     const orConditions = [];
@@ -183,7 +183,6 @@ const searchPatient = async (req, res) => {
     // Search across multiple fields with OR logic
     if (q) {
       orConditions.push(
-        { "$patientPPModes.pbarcode$": { [Op.iLike]: `%${q}%` } },
         { "$patient.p_mobile$": { [Op.like]: `%${q}%` } },
         { "$patient.p_name$": { [Op.iLike]: `%${q}%` } },
         { "$patient.uhid$": { [Op.iLike]: `%${q}%` } }
@@ -207,8 +206,13 @@ const searchPatient = async (req, res) => {
       whereClause[Op.or] = orConditions;
     }
 
-    /* Find Patients Matching the Query */
-    const data = await Patient.findAll({
+    /* 4. Paginate Results */
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    /* 5. Find Patients Matching the Query */
+    const { count, rows } = await Patient.findAll({
       where: whereClause,
       include: [
         {
@@ -250,26 +254,38 @@ const searchPatient = async (req, res) => {
             "popno",
           ],
         },
-        { 
-          model: Hospital, 
-          as: "hospital", 
-          attributes: ["hospitalname"] 
+        {
+          model: Hospital,
+          as: "hospital",
+          attributes: ["hospitalname"],
         },
       ],
+      limit: limit,
+      offset: offset,
       order: [["id", "ASC"]],
       distinct: true,
       col: "id",
       subQuery: false,
     });
 
-    // Fixed: Check for empty array instead of falsy value
-    if (!data || data.length === 0) {
+    const totalPages = Math.ceil(count / limit);
+
+    // 6. Handle No Results Found
+    if (!rows || rows.length === 0) {
       return res.status(404).json({
         message: "No data available",
       });
     }
 
-    return res.status(200).json(data);
+    return res.status(200).json({
+      data: rows,
+      meta: {
+        totalItems: count,
+        itemsPerPage: limit,
+        currentPage: page,
+        totalPages: totalPages,
+      },
+    });
   } catch (error) {
     console.error("Error searching patients:", error); // Added logging
     return res.status(500).json({
@@ -278,99 +294,99 @@ const searchPatient = async (req, res) => {
   }
 };
 
-// 4. Get Patient By Mobile Number
-const getPatientByMobile = async (req, res) => {
-  try {
-    /* 1. Authorization */
-    const { roleType } = req.user;
-    if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
-      roleType?.toLowerCase() !== "admin"
-    ) {
-      return res.status(403).json({
-        message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
-      });
-    }
+// // 4. Get Patient By Mobile Number
+// const getPatientByMobile = async (req, res) => {
+//   try {
+//     /* 1. Authorization */
+//     const { roleType } = req.user;
+//     if (
+//       roleType?.toLowerCase() !== "phlebotomist" &&
+//       roleType?.toLowerCase() !== "admin"
+//     ) {
+//       return res.status(403).json({
+//         message:
+//           "Access denied. Only phlebotomists and admins can access this resource.",
+//       });
+//     }
 
-    /* 2. Query Parameters */
-    const { phone } = req.query;
-    const filters = {};
+//     /* 2. Query Parameters */
+//     const { phone } = req.query;
+//     const filters = {};
 
-    if (phone) {
-      filters["p_mobile"] = {
-        [Op.iLike]: `%${phone}%`,
-      };
-    }
+//     if (phone) {
+//       filters["p_mobile"] = {
+//         [Op.iLike]: `%${phone}%`,
+//       };
+//     }
 
-    /* Find Patients Matching the Query */
-    const patients = await Patient.findAll({
-      where: filters,
-      include: [
-        {
-          model: ABHA,
-          as: "patientAbhas",
-          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-        },
-        {
-          model: OPBill,
-          as: "patientBills",
-          attributes: [
-            "ptotal",
-            "pdisc_percentage",
-            "pdisc_amount",
-            "pamt_receivable",
-            "pamt_received_total",
-            "pamt_due",
-            "pamt_mode",
-            "pnote",
-            "billstatus",
-            "review_status",
-            "review_days",
-          ],
-          include: [
-            {
-              model: OPPaymentDetail,
-              as: "Payments",
-              attributes: ["op_bill_id", "payment_method", "payment_amount"],
-            },
-          ],
-        },
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: [
-            "pscheme",
-            "refdoc",
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-      ],
-      order: [["id", "ASC"]],
-    });
+//     /* Find Patients Matching the Query */
+//     const patients = await Patient.findAll({
+//       where: filters,
+//       include: [
+//         {
+//           model: ABHA,
+//           as: "patientAbhas",
+//           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+//         },
+//         {
+//           model: OPBill,
+//           as: "patientBills",
+//           attributes: [
+//             "ptotal",
+//             "pdisc_percentage",
+//             "pdisc_amount",
+//             "pamt_receivable",
+//             "pamt_received_total",
+//             "pamt_due",
+//             "pamt_mode",
+//             "pnote",
+//             "billstatus",
+//             "review_status",
+//             "review_days",
+//           ],
+//           include: [
+//             {
+//               model: OPPaymentDetail,
+//               as: "Payments",
+//               attributes: ["op_bill_id", "payment_method", "payment_amount"],
+//             },
+//           ],
+//         },
+//         {
+//           model: PPPMode,
+//           as: "patientPPModes",
+//           attributes: [
+//             "pscheme",
+//             "refdoc",
+//             "remark",
+//             "attatchfile",
+//             "pbarcode",
+//             "trfno",
+//             "pop",
+//             "popno",
+//           ],
+//         },
+//         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+//       ],
+//       order: [["id", "ASC"]],
+//     });
 
-    const uniquePatients = [];
-    const seenMobiles = new Set();
+//     const uniquePatients = [];
+//     const seenMobiles = new Set();
 
-    for (const p of patients) {
-      if (!seenMobiles.has(p.p_mobile)) {
-        seenMobiles.add(p.p_mobile);
-        uniquePatients.push(p);
-      }
-    }
-    return res.status(200).json(uniquePatients);
-  } catch (error) {
-    return res.status(500).json({
-      message: `Something went wrong while searching patients ${error}`,
-    });
-  }
-};
+//     for (const p of patients) {
+//       if (!seenMobiles.has(p.p_mobile)) {
+//         seenMobiles.add(p.p_mobile);
+//         uniquePatients.push(p);
+//       }
+//     }
+//     return res.status(200).json(uniquePatients);
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: `Something went wrong while searching patients ${error}`,
+//     });
+//   }
+// };
 
 // 5. Get Patient By Id
 const getPatientById = async (req, res) => {
@@ -452,216 +468,216 @@ const getPatientById = async (req, res) => {
   }
 };
 
-// 6. Search By Date and Hospital Id For Admin
-const searchPatientBy = async (req, res) => {
-  try {
-    /* 1. Authorization */
-    const { roleType } = req.user;
-    if (roleType?.toLowerCase() !== "admin") {
-      return res.status(403).json({
-        message: "Access denied. Only admins can access this resource.",
-      });
-    }
+// // 6. Search By Date and Hospital Id For Admin
+// const searchPatientBy = async (req, res) => {
+//   try {
+//     /* 1. Authorization */
+//     const { roleType } = req.user;
+//     if (roleType?.toLowerCase() !== "admin") {
+//       return res.status(403).json({
+//         message: "Access denied. Only admins can access this resource.",
+//       });
+//     }
 
-    /* 2. Pass Hospital Id */
+//     /* 2. Pass Hospital Id */
 
-    const { hospitalid } = req.params;
+//     const { hospitalid } = req.params;
 
-    const hospital = await Hospital.findByPk(hospitalid);
+//     const hospital = await Hospital.findByPk(hospitalid);
 
-    if (!hospital) {
-      return res.status(404).json({ message: "Hospital Not Found" });
-    }
+//     if (!hospital) {
+//       return res.status(404).json({ message: "Hospital Not Found" });
+//     }
 
-    /* 3. Query Parameters */
-    const { startDate, endDate } = req.query;
+//     /* 3. Query Parameters */
+//     const { startDate, endDate } = req.query;
 
-    /* 4. Pagination Details */
-    let page = parseInt(req.query.page) || 1;
-    let limit = parseInt(req.query.limit) || 10;
-    let offset = (page - 1) * limit;
+//     /* 4. Pagination Details */
+//     let page = parseInt(req.query.page) || 1;
+//     let limit = parseInt(req.query.limit) || 10;
+//     let offset = (page - 1) * limit;
 
-    /* 5. Find Patients Matching the Query and the Hospital */
-    const { count, rows } = await Patient.findAndCountAll({
-      where: {
-        hospitalid: hospital.id,
-        p_regdate: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
+//     /* 5. Find Patients Matching the Query and the Hospital */
+//     const { count, rows } = await Patient.findAndCountAll({
+//       where: {
+//         hospitalid: hospital.id,
+//         p_regdate: {
+//           [Op.between]: [startDate, endDate],
+//         },
+//       },
 
-      attributes: [
-        "id",
-        "p_name",
-        "p_age",
-        "p_gender",
-        "p_regdate",
-        "p_lname",
-        "p_mobile",
-      ],
-      include: [
-        {
-          model: ABHA,
-          as: "patientAbhas",
-          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-        },
-        {
-          model: OPBill,
-          as: "patientBills",
-          attributes: [
-            "ptotal",
-            "pdisc_percentage",
-            "pdisc_amount",
-            "pamt_receivable",
-            "pamt_received_total",
-            "pamt_due",
-            "pamt_mode",
-            "pnote",
-            "billstatus",
-            "review_status",
-            "review_days",
-          ],
-          include: [
-            {
-              model: OPPaymentDetail,
-              as: "Payments",
-              attributes: ["op_bill_id", "payment_method", "payment_amount"],
-            },
-          ],
-        },
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: [
-            "pscheme",
-            "refdoc",
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        {
-          model: PatientTest,
-          as: "patientTests",
-          attributes: [
-            "status",
-            "rejection_reason",
-            "test_created_date",
-            "test_updated_date",
-            "test_result",
-            "test_image",
-          ],
-          include: [
-            {
-              model: Investigation,
-              as: "investigation",
-              attributes: ["testname", "testmethod", "sampletype"],
-              include: [
-                {
-                  model: Department,
-                  as: "department",
-                  attributes: ["dptname"],
-                },
-                { model: Result, as: "results", attributes: ["unit"] },
-              ],
-            },
-          ],
-        },
-        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-      ],
-      limit: limit,
-      offset: offset,
-      order: [["id", "ASC"]],
-      distinct: true,
-      col: "id",
-    });
+//       attributes: [
+//         "id",
+//         "p_name",
+//         "p_age",
+//         "p_gender",
+//         "p_regdate",
+//         "p_lname",
+//         "p_mobile",
+//       ],
+//       include: [
+//         {
+//           model: ABHA,
+//           as: "patientAbhas",
+//           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+//         },
+//         {
+//           model: OPBill,
+//           as: "patientBills",
+//           attributes: [
+//             "ptotal",
+//             "pdisc_percentage",
+//             "pdisc_amount",
+//             "pamt_receivable",
+//             "pamt_received_total",
+//             "pamt_due",
+//             "pamt_mode",
+//             "pnote",
+//             "billstatus",
+//             "review_status",
+//             "review_days",
+//           ],
+//           include: [
+//             {
+//               model: OPPaymentDetail,
+//               as: "Payments",
+//               attributes: ["op_bill_id", "payment_method", "payment_amount"],
+//             },
+//           ],
+//         },
+//         {
+//           model: PPPMode,
+//           as: "patientPPModes",
+//           attributes: [
+//             "pscheme",
+//             "refdoc",
+//             "remark",
+//             "attatchfile",
+//             "pbarcode",
+//             "trfno",
+//             "pop",
+//             "popno",
+//           ],
+//         },
+//         {
+//           model: PatientTest,
+//           as: "patientTests",
+//           attributes: [
+//             "status",
+//             "rejection_reason",
+//             "test_created_date",
+//             "test_updated_date",
+//             "test_result",
+//             "test_image",
+//           ],
+//           include: [
+//             {
+//               model: Investigation,
+//               as: "investigation",
+//               attributes: ["testname", "testmethod", "sampletype"],
+//               include: [
+//                 {
+//                   model: Department,
+//                   as: "department",
+//                   attributes: ["dptname"],
+//                 },
+//                 { model: Result, as: "results", attributes: ["unit"] },
+//               ],
+//             },
+//           ],
+//         },
+//         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+//       ],
+//       limit: limit,
+//       offset: offset,
+//       order: [["id", "ASC"]],
+//       distinct: true,
+//       col: "id",
+//     });
 
-    const totalPages = Math.ceil(count / limit);
+//     const totalPages = Math.ceil(count / limit);
 
-    if (!rows) {
-      return res.status(404).json({
-        message: "No data available for the given hospital and date.",
-      });
-    }
+//     if (!rows) {
+//       return res.status(404).json({
+//         message: "No data available for the given hospital and date.",
+//       });
+//     }
 
-    return res.status(200).json({
-      data: rows,
-      meta: {
-        totalItems: count,
-        itemsPerPage: limit,
-        currentPage: page,
-        totalPages: totalPages,
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: `Something went wrong while searching patients ${error}`,
-    });
-  }
-};
+//     return res.status(200).json({
+//       data: rows,
+//       meta: {
+//         totalItems: count,
+//         itemsPerPage: limit,
+//         currentPage: page,
+//         totalPages: totalPages,
+//       },
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: `Something went wrong while searching patients ${error}`,
+//     });
+//   }
+// };
 
-// 7. Search Barcode
-const searchBarcode = async (req, res) => {
-  try {
-    /* 1. Authorization */
-    const { roleType } = req.user;
-    if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
-      roleType?.toLowerCase() !== "admin" &&
-      roleType?.toLowerCase() !== "reception"
-    ) {
-      return res.status(403).json({
-        message:
-          "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
-      });
-    }
+// // 7. Search Barcode
+// const searchBarcode = async (req, res) => {
+//   try {
+//     /* 1. Authorization */
+//     const { roleType } = req.user;
+//     if (
+//       roleType?.toLowerCase() !== "phlebotomist" &&
+//       roleType?.toLowerCase() !== "admin" &&
+//       roleType?.toLowerCase() !== "reception"
+//     ) {
+//       return res.status(403).json({
+//         message:
+//           "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
+//       });
+//     }
 
-    /* 3. Query Parameters */
-    const { pbarcode } = req.query;
-    const filters = {};
+//     /* 3. Query Parameters */
+//     const { pbarcode } = req.query;
+//     const filters = {};
 
-    if (pbarcode) {
-      filters["$patientPPModes.pbarcode$"] = pbarcode;
-    }
+//     if (pbarcode) {
+//       filters["$patientPPModes.pbarcode$"] = pbarcode;
+//     }
 
-    /* Find Barcode Matching the Query */
-    const result = await Patient.findAndCountAll({
-      where: filters,
-      include: [
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: ["pbarcode"],
-        },
-      ],
-      order: [["id", "ASC"]],
+//     /* Find Barcode Matching the Query */
+//     const result = await Patient.findAndCountAll({
+//       where: filters,
+//       include: [
+//         {
+//           model: PPPMode,
+//           as: "patientPPModes",
+//           attributes: ["pbarcode"],
+//         },
+//       ],
+//       order: [["id", "ASC"]],
 
-      distinct: true,
-      col: "id",
-      subQuery: false,
-    });
+//       distinct: true,
+//       col: "id",
+//       subQuery: false,
+//     });
 
-    if (result.count === 0) {
-      return res.status(404).json({ message: "No matching barcode found." });
-    }
+//     if (result.count === 0) {
+//       return res.status(404).json({ message: "No matching barcode found." });
+//     }
 
-    return res.status(200).json({ message: "Barcode found" });
-  } catch (error) {
-    return res.status(500).json({
-      message: `Something went wrong while searching patients ${error}`,
-    });
-  }
-};
+//     return res.status(200).json({ message: "Barcode found" });
+//   } catch (error) {
+//     return res.status(500).json({
+//       message: `Something went wrong while searching patients ${error}`,
+//     });
+//   }
+// };
 
 module.exports = {
   getPatient,
   searchPatient,
-  getPatientByMobile,
+  // getPatientByMobile,
   getPatientById,
   getTestData,
-  searchPatientBy,
-  searchBarcode,
+  // searchPatientBy,
+  // searchBarcode,
 };

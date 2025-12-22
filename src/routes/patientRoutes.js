@@ -49,7 +49,7 @@ router.route("/get-patient/:patientid").get(getPatientById);
 router.route("/search-patient/:hospitalid").get(searchPatient);
 
 // 6. Get Patient By Mobile Number
-router.route("/get-data-mobile").get(getPatientByMobile);
+// router.route("/get-data-mobile").get(getPatientByMobile);
 
 // 7. Get Test Data
 router.route("/get-patient-test-data/:hospitalid").get(getTestData);
@@ -64,10 +64,10 @@ router.route("/send-tests").put(updateTestStatus);
 router.route("/search-test").get(searchTest);
 
 // 11. Search Patient For Admin By Hospital id and Date Filter
-router.route("/get-data/:hospitalid").get(searchPatientBy);
+// router.route("/get-data/:hospitalid").get(searchPatientBy);
 
 // 12. Search Barcode
-router.route("/search-code").get(searchBarcode);
+// router.route("/search-code").get(searchBarcode);
 
 // 13. Get Bill Data
 router.route("/update-patient-bill/:id").put(updateBillData);
