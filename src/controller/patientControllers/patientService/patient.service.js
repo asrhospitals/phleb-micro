@@ -231,17 +231,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
       hospitalid: targetHospitalId,
       reg_by: "Center",
     },
-    attributes: [
-      "id",
-      "p_name",
-      "p_age",
-      "p_gender",
-      "p_regdate",
-      "p_lname",
-      "p_mobile",
-      "reg_by",
-      "uhid"
-    ],
+   
     // The complex include structure is moved entirely to the service
     include: [
       {
@@ -288,7 +278,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
     ],
     limit: limit,
     offset: offset,
-    order: [["id", "ASC"]],
+    order: [["id", "DESC"]],
     distinct: true,
     col: "id",
   });
@@ -431,7 +421,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
     ],
     limit: limit,
     offset: offset,
-    order: [["id", "ASC"]],
+    order: [["id", "DESC"]],
     subQuery: false,
   });
 
