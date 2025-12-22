@@ -173,6 +173,11 @@ const searchPatient = async (req, res) => {
       return res.status(404).json({ message: "Hospital not found" });
     }
 
+    /* 4. Paginate Results */
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
     /* 3. Query Parameters */
     const { q, startDate, endDate } = req.query;
 
@@ -206,25 +211,20 @@ const searchPatient = async (req, res) => {
       whereClause[Op.or] = orConditions;
     }
 
-    /* 4. Paginate Results */
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const offset = (page - 1) * limit;
-
     /* 5. Find Patients Matching the Query */
-    const { count, rows } = await Patient.findAll({
+    const { count, rows } = await Patient.findAndCountAll({
       where: whereClause,
-      include: [
-        {
-          model: ABHA,
-          as: "patientAbhas",
-          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-        },
-        {
-          model: OPBill,
-          as: "patientBills",
-          attributes: [
-            "ptotal",
+     include: [
+      {
+        model: ABHA,
+        as: "patientAbhas",
+        attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+      },
+      {
+        model: OPBill,
+        as: "patientBills",
+        attributes: [
+        "ptotal",
             "pdisc_percentage",
             "pdisc_amount",
             "pamt_receivable",
@@ -238,28 +238,25 @@ const searchPatient = async (req, res) => {
             "review_status",
             "review_days",
             "bill_date",
-          ],
-        },
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: [
-            "pscheme",
-            "refdoc",
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        {
-          model: Hospital,
-          as: "hospital",
-          attributes: ["hospitalname"],
-        },
-      ],
+        ],
+      
+      },
+      {
+        model: PPPMode,
+        as: "patientPPModes",
+        attributes: [
+          "pscheme",
+          "refdoc",
+          "remark",
+          "attatchfile",
+          "pbarcode",
+          "trfno",
+          "pop",
+          "popno",
+        ],
+      },
+      { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+    ],
       limit: limit,
       offset: offset,
       order: [["id", "ASC"]],
@@ -268,14 +265,16 @@ const searchPatient = async (req, res) => {
       subQuery: false,
     });
 
-    const totalPages = Math.ceil(count / limit);
-
     // 6. Handle No Results Found
-    if (!rows || rows.length === 0) {
+    if (!rows) {
       return res.status(404).json({
         message: "No data available",
       });
     }
+
+    console.log("Search Patients Result:", { count, rows }); // Debugging log
+
+    const totalPages = Math.ceil(count / limit);
 
     return res.status(200).json({
       data: rows,
