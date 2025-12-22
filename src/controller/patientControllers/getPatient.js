@@ -214,17 +214,17 @@ const searchPatient = async (req, res) => {
     /* 5. Find Patients Matching the Query */
     const { count, rows } = await Patient.findAndCountAll({
       where: whereClause,
-     include: [
-      {
-        model: ABHA,
-        as: "patientAbhas",
-        attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-      },
-      {
-        model: OPBill,
-        as: "patientBills",
-        attributes: [
-        "ptotal",
+      include: [
+        {
+          model: ABHA,
+          as: "patientAbhas",
+          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "ptotal",
             "pdisc_percentage",
             "pdisc_amount",
             "pamt_receivable",
@@ -238,25 +238,24 @@ const searchPatient = async (req, res) => {
             "review_status",
             "review_days",
             "bill_date",
-        ],
-      
-      },
-      {
-        model: PPPMode,
-        as: "patientPPModes",
-        attributes: [
-          "pscheme",
-          "refdoc",
-          "remark",
-          "attatchfile",
-          "pbarcode",
-          "trfno",
-          "pop",
-          "popno",
-        ],
-      },
-      { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-    ],
+          ],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+          ],
+        },
+        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      ],
       limit: limit,
       offset: offset,
       order: [["id", "ASC"]],
@@ -271,8 +270,6 @@ const searchPatient = async (req, res) => {
         message: "No data available",
       });
     }
-
-    console.log("Search Patients Result:", { count, rows }); // Debugging log
 
     const totalPages = Math.ceil(count / limit);
 
@@ -618,58 +615,58 @@ const getPatientById = async (req, res) => {
 //   }
 // };
 
-// // 7. Search Barcode
-// const searchBarcode = async (req, res) => {
-//   try {
-//     /* 1. Authorization */
-//     const { roleType } = req.user;
-//     if (
-//       roleType?.toLowerCase() !== "phlebotomist" &&
-//       roleType?.toLowerCase() !== "admin" &&
-//       roleType?.toLowerCase() !== "reception"
-//     ) {
-//       return res.status(403).json({
-//         message:
-//           "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
-//       });
-//     }
+// 7. Search Barcode
+const searchBarcode = async (req, res) => {
+  try {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (
+      roleType?.toLowerCase() !== "phlebotomist" &&
 
-//     /* 3. Query Parameters */
-//     const { pbarcode } = req.query;
-//     const filters = {};
+      roleType?.toLowerCase() !== "reception"
+    ) {
+      return res.status(403).json({
+        message:
+          "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
+      });
+    }
 
-//     if (pbarcode) {
-//       filters["$patientPPModes.pbarcode$"] = pbarcode;
-//     }
+    /* 3. Query Parameters */
+    const { pbarcode } = req.query;
+    const filters = {};
 
-//     /* Find Barcode Matching the Query */
-//     const result = await Patient.findAndCountAll({
-//       where: filters,
-//       include: [
-//         {
-//           model: PPPMode,
-//           as: "patientPPModes",
-//           attributes: ["pbarcode"],
-//         },
-//       ],
-//       order: [["id", "ASC"]],
+    if (pbarcode) {
+      filters["$patientPPModes.pbarcode$"] = pbarcode;
+    }
 
-//       distinct: true,
-//       col: "id",
-//       subQuery: false,
-//     });
+    /* Find Barcode Matching the Query */
+    const result = await Patient.findAndCountAll({
+      where: filters,
+      include: [
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: ["pbarcode"],
+        },
+      ],
+      order: [["id", "ASC"]],
 
-//     if (result.count === 0) {
-//       return res.status(404).json({ message: "No matching barcode found." });
-//     }
+      distinct: true,
+      col: "id",
+      subQuery: false,
+    });
 
-//     return res.status(200).json({ message: "Barcode found" });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: `Something went wrong while searching patients ${error}`,
-//     });
-//   }
-// };
+    if (result.count === 0) {
+      return res.status(404).json({ message: "No matching barcode found." });
+    }
+
+    return res.status(200).json({ message: "Barcode found" });
+  } catch (error) {
+    return res.status(500).json({
+      message: `Something went wrong while searching patients ${error}`,
+    });
+  }
+};
 
 module.exports = {
   getPatient,
@@ -678,5 +675,5 @@ module.exports = {
   getPatientById,
   getTestData,
   // searchPatientBy,
-  // searchBarcode,
+  searchBarcode,
 };

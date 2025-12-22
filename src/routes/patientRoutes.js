@@ -67,7 +67,7 @@ router.route("/search-test").get(searchTest);
 // router.route("/get-data/:hospitalid").get(searchPatientBy);
 
 // 12. Search Barcode
-// router.route("/search-code").get(searchBarcode);
+router.route("/search-code").get(searchBarcode);
 
 // 13. Get Bill Data
 router.route("/update-patient-bill/:id").put(updateBillData);
