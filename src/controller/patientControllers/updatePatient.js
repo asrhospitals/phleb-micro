@@ -7,8 +7,10 @@ const {
   PPPMode,
   Hospital,
   ABHA,
+  PatientTest,
 } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
+const sequelize = require("../../db/dbConnection");
 
 // 1. Update Patient Data
 const updatePatientInfo = async (req, res) => {
@@ -27,83 +29,51 @@ const updatePatientInfo = async (req, res) => {
 };
 
 // 2. Update Patient Bill Data
+/*Need to Update the bill need to add the Inv Ids also */
 const updateBillData = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { patientId, billId } = req.params;
 
     // 1. Verify Patient Existence
-    const getPatient = await Patient.findByPk(id);
+    const getPatient = await Patient.findByPk(patientId);
     if (!getPatient) {
-      return res.status(404).json({ message: `Patient not found by id: ${id}` });
+      return res
+        .status(404)
+        .json({ message: `Patient not found by id: ${patientId}` });
     }
 
-    const rawData = req.body.opbill?.[0];
-    if (!rawData) return res.status(400).json({ message: "No billing data provided" });
+    // 2. Verify the Bill Id
+    const getBill = await OPBill.findByPk(billId);
+    if (!getBill) {
+      return res
+        .status(400)
+        .json({ message: `Bill not found by id: ${billId}` });
+    }
 
-    // 2. DATA WHITELISTING (Prevents "unnecessary data")
-    // We only extract the fields we explicitly want to save.
-    const sanitizedBillData = {
-      ptotal: parseFloat(rawData.ptotal || 0),
-      pdisc_percentage: parseFloat(rawData.pdisc_percentage || 0),
-      pdisc_amount: parseFloat(rawData.pdisc_amount || 0),
-      pamt_receivable: parseFloat(rawData.pamt_receivable || 0),
-      pamt_received_total: parseFloat(rawData.pamt_received_total || 0),
-      pamt_due: parseFloat(rawData.pamt_due || 0),
-      pamt_mode: rawData.pamt_mode,
-      pnote: rawData.pnote,
-      billstatus: rawData.billstatus || "Unpaid",
-      review_status: rawData.review_status,
-      review_days: parseInt(rawData.review_days || 0),
-      // Clean the JSONB arrays to only include specific keys
-      paymentDetails: Array.isArray(rawData.paymentDetails) 
-        ? rawData.paymentDetails.map(p => ({ 
-            method: p.payment_method, 
-            amount: parseFloat(p.payment_amount) 
-          })) 
-        : [],
-      invDetails: Array.isArray(rawData.invDetails) 
-        ? rawData.invDetails.map(inv => ({ 
-            inv_name: inv.inv_name, 
-            price: parseFloat(inv.unit_price || 0),
-            qty: parseInt(inv.quantity || 1),
-            total: parseFloat(inv.final_amount || 0)
-          })) 
-        : []
-    };
-
-    const currentDate = new Date().toISOString().split("T")[0];
-
-    // 3. Find Today's Open Bill
-    const getExistingBill = await OPBill.findOne({
+    // 3. Update Bill Record
+    await OPBill.update(req.body, {
       where: {
-        pid: id,
-        bill_date: currentDate,
+        id: billId,
+        pid: patientId,
         billstatus: { [Op.in]: ["Unpaid", "Due"] },
       },
     });
 
-    if (getExistingBill) {
-      // Update existing record with sanitized data
-      await getExistingBill.update(sanitizedBillData);
-      return res.status(200).json({ message: "Bill updated successfully" });
-    } else {
-      // Create new record for today
-      await OPBill.create({
-        pid: id,
-        bill_date: currentDate,
-        ...sanitizedBillData,
-      });
-      return res.status(201).json({ message: "Bill created successfully" });
-    }
-
+    // 4. Return Success Response
+    return res.status(200).json({ message: "Bill updated successfully" });
   } catch (err) {
-    // 4. Error Handling (Keep your existing Sequelize error logic)
-    if (err.name === "SequelizeValidationError" || err.name === "SequelizeUniqueConstraintError") {
+    // 5. Error Handling (Keep your existing Sequelize error logic)
+    if (
+      err.name === "SequelizeValidationError" ||
+      err.name === "SequelizeUniqueConstraintError"
+    ) {
       const validationErrors = err.errors.map((e) => ({
         field: e.path,
         message: e.message,
       }));
-      return res.status(400).json({ message: "Validation error", errors: validationErrors });
+      return res
+        .status(400)
+        .json({ message: "Validation error", errors: validationErrors });
     }
 
     console.error("Critical Billing Error:", err);
@@ -111,7 +81,45 @@ const updateBillData = async (req, res) => {
   }
 };
 
+// 3. Update Patient Test Data
+// (This function can be implemented similarly with proper data whitelisting and error handling)
+const updatePatientTestData = async (req, res) => {
+  try {
+    // Get the patient by ID
+    const { id } = req.params;
+    // Check if patient exists
+    const patient = await Patient.findByPk(id);
+    // If patient not found, return 404
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    // get some variables
+    const pid = id;
+    const hospitalid = req.user.hospitalid;
+    const nodalid = req.user.nodalid;
+    const { investigation_ids } = req.body;
+
+    // Now check investigation_ids = [] is empty or not if empty then add test for the patient
+
+    if (investigation_ids.length > 0) {
+      const patienttests = investigation_ids.map((investigation_id) => ({
+        pid,
+        investigation_id,
+        hospitalid,
+        nodalid,
+        status: "center",
+      }));
+    }
+
+    res.status(200).json({ message: "Test data updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: `Something went wrong ${error}` });
+  }
+};
+
 module.exports = {
   updatePatientInfo,
   updateBillData,
+  updatePatientTestData,
 };

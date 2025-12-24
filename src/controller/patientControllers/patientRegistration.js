@@ -58,9 +58,9 @@ const addGeneralPatientRegistration = async (req, res) => {
   /* 1. Authorization: Check User Role */
   const { roleType, hospitalid, nodalid } = req.user;
 
-  if (roleType?.toLowerCase() !== "phlebotomist") {
+  if (roleType?.toLowerCase() !== "reception") {
     return res.status(403).json({
-      message: "Access denied. Only phlebotomists can access this resource.",
+      message: "Access denied. Only receptions can access this resource.",
     });
   }
 
@@ -96,9 +96,9 @@ const addPatientWithBillAndTest = async (req, res) => {
   /* 1. Authorization: Check User Role */
   const { roleType, hospitalid, nodalid } = req.user;
 
-  if (roleType?.toLowerCase() !== "phlebotomist") {
+  if (roleType?.toLowerCase() !== "reception") {
     return res.status(403).json({
-      message: "Access denied. Only phlebotomists can access this resource.",
+      message: "Access denied. Only receptions can access this resource.",
     });
   }
 
@@ -132,9 +132,9 @@ const addPPPPatientWithTest = async (req, res) => {
   /* 1. Authorization: Check User Role */
   const { roleType, hospitalid, nodalid } = req.user;
 
-  if (roleType?.toLowerCase() !== "phlebotomist") {
+  if (roleType?.toLowerCase() !== "reception") {
     return res.status(403).json({
-      message: "Access denied. Only phlebotomists can access this resource.",
+      message: "Access denied. Only receptions can access this resource.",
     });
   }
 

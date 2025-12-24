@@ -49,8 +49,8 @@ app.use(limiter);
 app.use(cors()); // Temporary open CORS for all origins
 
 // Body Parsing with safety limits
-app.use(express.json({ limit: "3mb" }));
-app.use(express.urlencoded({ extended: true, limit: "3mb" }));
+app.use(express.json({ limit: "400kb" }));
+app.use(express.urlencoded({ extended: true, limit: "400kb" }));
 
 // Logging
 app.use(morgan(NODE_ENV === "production" ? "combined" : "dev"));
@@ -66,17 +66,17 @@ app.get("/health", async (req, res) => {
 });
 
 // 4. ROUTE DEFINITIONS
-const API_PREFIX_V1 = "/api/v1/phleb";
-const API_PREFIX_V2 = "/api/v2/phleb";
-const API_PREFIX_V3 = "/api/v3/phleb";
+const API_PREFIX_V1 = "/api/v1/recep";
+const API_PREFIX_V2 = "/api/v2/recep";
+const API_PREFIX_V3 = "/api/v3/recep";
 
-app.use(`${API_PREFIX_V1}/report`, verifyToken, role("phlebotomist"), ReportRoutes);
-app.use(API_PREFIX_V1, verifyToken, role("phlebotomist"), PatientRoutes);
+app.use(`${API_PREFIX_V1}/report`, verifyToken, role("reception"), ReportRoutes);
+app.use(API_PREFIX_V1, verifyToken, role("reception"), PatientRoutes);
 
 app.use(API_PREFIX_V2, verifyToken, role("admin"), PatientRoutes);
 
-app.use(`${API_PREFIX_V3}/report`, verifyToken, role("reception"), ReportRoutes);
-app.use(API_PREFIX_V3, verifyToken, role("reception"), PatientRoutes);
+// app.use(`${API_PREFIX_V3}/report`, verifyToken, role("reception"), ReportRoutes);
+// app.use(API_PREFIX_V3, verifyToken, role("reception"), PatientRoutes);
 
 app.use("/api/v4/search", verifyToken, role("admin", "reception", "phlebotomist"), PatientRoutes);
 
@@ -105,9 +105,9 @@ const startServer = async () => {
     console.log("✅ Database connection established.");
 
     // Avoid .sync() in production; use migrations instead
-    // if (NODE_ENV === "development") {
-    //   await sequelize.sync();
-    // }
+    if (NODE_ENV === "development") {
+      await sequelize.sync();
+    }
 
     const server = app.listen(PORT, () => {
       console.log(`🚀 Server running in ${NODE_ENV} mode on port ${PORT}`);

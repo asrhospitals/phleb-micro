@@ -15,6 +15,7 @@ const {
 const {
   updatePatientInfo,
   updateBillData,
+  updatePatientTestData,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -69,7 +70,10 @@ router.route("/search-test").get(searchTest);
 // 12. Search Barcode
 router.route("/search-code").get(searchBarcode);
 
-// 13. Get Bill Data
-router.route("/update-patient-bill/:id").put(updateBillData);
+// 13. Update Bill Data
+router.route("/update-patient-bill/:patientId/:billId").put(updateBillData);
+
+// 14. Update Test
+router.route("/update-patient-test/:id").put(updatePatientTestData);
 
 module.exports = router;

@@ -28,12 +28,12 @@ const getPatient = async (req, res) => {
     const paramHospitalId = parseInt(req.params.hospitalid);
 
     if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "reception" &&
       roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
+          "Access denied. Only receptions and admins can access this resource.",
       });
     }
 
@@ -93,12 +93,12 @@ const getTestData = async (req, res) => {
     const paramHospitalId = parseInt(req.params.hospitalid);
 
     if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "reception" &&
       roleType?.toLowerCase() !== "admin"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
+          "Access denied. Only receptions and admins can access this resource.",
       });
     }
 
@@ -154,13 +154,13 @@ const searchPatient = async (req, res) => {
     const { roleType } = req.user;
     // Fixed: Changed && to || (OR logic)
     if (
-      roleType !== "phlebotomist" &&
+      roleType !== "reception" &&
       roleType !== "admin" &&
       roleType !== "reception"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists, admins, and reception can access this resource.",
+          "Access denied. Only receptions, admins, and reception can access this resource.",
       });
     }
 
@@ -296,12 +296,12 @@ const searchPatient = async (req, res) => {
 //     /* 1. Authorization */
 //     const { roleType } = req.user;
 //     if (
-//       roleType?.toLowerCase() !== "phlebotomist" &&
+//       roleType?.toLowerCase() !== "reception" &&
 //       roleType?.toLowerCase() !== "admin"
 //     ) {
 //       return res.status(403).json({
 //         message:
-//           "Access denied. Only phlebotomists and admins can access this resource.",
+//           "Access denied. Only receptions and admins can access this resource.",
 //       });
 //     }
 
@@ -390,13 +390,13 @@ const getPatientById = async (req, res) => {
     /* 1. Authorization */
     const { roleType } = req.user;
     if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "reception" &&
       roleType?.toLowerCase() !== "admin" &&
       roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists and admins can access this resource.",
+          "Access denied. Only receptions and admins can access this resource.",
       });
     }
 
@@ -621,13 +621,13 @@ const searchBarcode = async (req, res) => {
     /* 1. Authorization */
     const { roleType } = req.user;
     if (
-      roleType?.toLowerCase() !== "phlebotomist" &&
+      roleType?.toLowerCase() !== "reception" &&
 
       roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
         message:
-          "Access denied. Only phlebotomists, admins, and receptionists can access this resource.",
+          "Access denied. Only receptions, admins, and receptionists can access this resource.",
       });
     }
 

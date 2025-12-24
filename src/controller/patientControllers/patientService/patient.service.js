@@ -231,7 +231,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
       hospitalid: targetHospitalId,
       reg_by: "Center",
     },
-   
+
     // The complex include structure is moved entirely to the service
     include: [
       {
@@ -243,22 +243,23 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
         model: OPBill,
         as: "patientBills",
         attributes: [
-        "ptotal",
-            "pdisc_percentage",
-            "pdisc_amount",
-            "pamt_receivable",
-            "pamt_received_total",
-            "pamt_due",
-            "pamt_mode",
-            "pnote",
-            "billstatus",
-            "paymentDetails",
-            "invDetails",
-            "review_status",
-            "review_days",
-            "bill_date",
+          "id",
+          "ptotal",
+          "pdisc_percentage",
+          "pdisc_amount",
+          "pamt_receivable",
+          "pamt_received_total",
+          "pamt_due",
+          "pamt_mode",
+          "pnote",
+          "billstatus",
+          "paymentDetails",
+          "invDetails",
+          "review_status",
+          "review_days",
+          "bill_date",
         ],
-      
+        order: [["id", "DESC"]],
       },
       {
         model: PPPMode,
@@ -284,7 +285,9 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
   });
 
   if (!rows || rows.length === 0) {
-    throw new Error("No data available for the given hospital and date.");
+    return res.status(200).json({
+      data: [],
+    });
   }
 
   const totalPages = Math.ceil(count / limit);
@@ -343,7 +346,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
       "p_lname",
       "p_mobile",
       "reg_by",
-      "uhid"
+      "uhid",
     ],
     include: [
       {
@@ -351,6 +354,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
         as: "patientPPModes",
         required: true, // Only fetch Patients who have a PPP mode record
         attributes: [
+          "id",
           "remark",
           "attatchfile",
           "pbarcode",
@@ -365,6 +369,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
         where: { status: "center" }, // Filter by status
         required: false, // Patients can exist without a current 'center' test
         attributes: [
+          "id",
           "status",
           "rejection_reason",
           "test_created_date",
@@ -556,11 +561,7 @@ async function checkDuplicates(pptest, abha, transaction) {
   }
 }
 
-async function createBillingRecords(
-  pid,
-  billData,
-  transaction
-) {
+async function createBillingRecords(pid, billData, transaction) {
   // Logic to prepare mainBillRecord
   const mainBillRecord = {
     // Only include fields that belong to the main OPBill model

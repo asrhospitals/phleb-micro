@@ -33,6 +33,10 @@ const Patient = sequelize.define(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    // p_regtime:{
+    //   type:DataTypes.TIME,
+    //   allowNull:false,
+    // },
     p_title:{
       type:DataTypes.STRING,
       allowNull:false
