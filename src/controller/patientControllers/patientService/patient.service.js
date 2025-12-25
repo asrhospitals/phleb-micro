@@ -284,10 +284,16 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
     col: "id",
   });
 
-  if (!rows || rows.length === 0) {
-    return res.status(200).json({
+ if (!rows || rows.length === 0) {
+    return {
       data: [],
-    });
+      totalItems: 0,
+      itemsPerPage: limit,
+      currentPage: page,
+      totalPages: 0,
+      limit: limit,
+      page: page,
+    };
   }
 
   const totalPages = Math.ceil(count / limit);
