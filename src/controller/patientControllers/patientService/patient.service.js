@@ -406,7 +406,7 @@ async function getPatientTestData(targetHospitalId, queryParams) {
       "p_regdate",
       "p_lname",
       "p_mobile",
-      "reg_by",
+      "u_name",
       "uhid",
     ],
     include: [
