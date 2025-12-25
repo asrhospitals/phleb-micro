@@ -275,6 +275,61 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
           "popno",
         ],
       },
+      {
+        model: PatientTest,
+        as: "patientTests",
+        where: { status: "center" }, // Filter by status
+        required: false, // Patients can exist without a current 'center' test
+        attributes: [
+          "id",
+          "status",
+          "rejection_reason",
+          "test_created_date",
+          "test_updated_date",
+          "test_result",
+          "test_image",
+        ],
+        include: [
+          {
+            model: Investigation,
+            as: "investigation",
+            // where: { test_collection: "No" }, // Filter investigations
+            attributes: [
+              "testname",
+              "testmethod",
+              "sampletype",
+              "test_collection",
+            ],
+            include: [
+              {
+                model: Department,
+                as: "department",
+                attributes: ["dptname"],
+              },
+              { model: Result, as: "results", attributes: ["unit"] },
+              {
+                model: DerivedTestComponent,
+                as: "components",
+                attributes: ["formula"],
+                include: [
+                  {
+                    model: Investigation,
+                    as: "childTest",
+                    attributes: ["testname"],
+                    include: [
+                      {
+                        model: Result,
+                        as: "results",
+                        attributes: ["unit"],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
       { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
     ],
     limit: limit,
@@ -284,7 +339,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
     col: "id",
   });
 
- if (!rows || rows.length === 0) {
+  if (!rows || rows.length === 0) {
     return {
       data: [],
       totalItems: 0,
