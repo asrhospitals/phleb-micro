@@ -16,6 +16,9 @@ const {
   updatePatientInfo,
   updateBillData,
   updatePatientTestData,
+  updatePatientDemographicInfo,
+  updateCurrentBillData,
+  updateQuickBillAndTestForExistingPatient,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -56,7 +59,7 @@ router.route("/search-patient/:hospitalid").get(searchPatient);
 router.route("/get-patient-test-data/:hospitalid").get(getTestData);
 
 // 8. Update Patient Infographic Data
-router.route("/update-patient-infographic/:patient_id").put(updatePatientInfo);
+router.route("/update-patient-infographic/:patient_id").put(updatePatientDemographicInfo);
 
 // 9. Send Test to Respective Node
 router.route("/send-tests").put(updateTestStatus);
@@ -71,9 +74,9 @@ router.route("/search-test").get(searchTest);
 router.route("/search-code").get(searchBarcode);
 
 // 13. Update Bill Data
-router.route("/update-patient-bill/:patientId/:billId").put(updateBillData);
+router.route("/update-bills/:patientId/:billId").put(updateCurrentBillData);
 
 // 14. Update Test
-router.route("/update-patient-test/:id").put(updatePatientTestData);
+router.route("/update-patient-test/:id").put(updateQuickBillAndTestForExistingPatient);
 
 module.exports = router;

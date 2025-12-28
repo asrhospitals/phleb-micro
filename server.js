@@ -20,18 +20,18 @@ const PORT = process.env.PORT || 3002;
 const NODE_ENV = process.env.NODE_ENV || "development";
 
 // 1. GLOBAL RATE LIMITING
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 100, // Limit each IP to 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Too many requests from this IP, please try again later."
-});
+// const limiter = rateLimit({
+//   windowMs: 1 * 60 * 1000, // 1 minute
+//   max: 100, // Limit each IP to 100 requests per window
+//   standardHeaders: true,
+//   legacyHeaders: false,
+//   message: "Too many requests from this IP, please try again later."
+// });
 
 // 2. SECURITY & PERFORMANCE MIDDLEWARE
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression()); // Compress response bodies
-app.use(limiter);
+// app.use(limiter);
 
 // Robust CORS Configuration
 // const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(",") || [];
@@ -101,7 +101,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    // await sequelize.sync();
+    //  await sequelize.sync({ alter: true });
     console.log("✅ Database connection established.");
 
     // Avoid .sync() in production; use migrations instead

@@ -489,6 +489,8 @@ async function getPatientTestData(targetHospitalId, queryParams) {
     offset: offset,
     order: [["id", "DESC"]],
     subQuery: false,
+    distinct: true,
+    col: "id",
   });
 
   if (!rows || rows.length === 0) {

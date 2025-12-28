@@ -145,6 +145,12 @@ const Patient = sequelize.define(
     p_email_alart:{
       type:DataTypes.BOOLEAN,
     },
+    p_flag:{
+      type:DataTypes.INTEGER,
+    },
+    p_reg_time:{
+      type:DataTypes.TIME,
+    },
   },
 );
 

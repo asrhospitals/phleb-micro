@@ -9,6 +9,7 @@ const {
   Department,
   Result,
   InvDetail,
+  DerivedTestComponent,
 } = require("../../model/associationModels/associations");
 const { Op } = require("sequelize");
 
@@ -406,48 +407,105 @@ const getPatientById = async (req, res) => {
     /* Find Patient By Id */
     const patient = await Patient.findOne({
       where: { id: patientid },
-      include: [
-        {
-          model: ABHA,
-          as: "patientAbhas",
-          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-        },
-        {
-          model: OPBill,
-          as: "patientBills",
-          attributes: [
-            "ptotal",
-            "pdisc_percentage",
-            "pdisc_amount",
-            "pamt_receivable",
-            "pamt_received_total",
-            "pamt_due",
-            "pamt_mode",
-            "pnote",
-            "billstatus",
-            "paymentDetails",
-            "invDetails",
-            "review_status",
-            "review_days",
-            "bill_date",
-          ],
-        },
-        {
-          model: PPPMode,
-          as: "patientPPModes",
-          attributes: [
-            "pscheme",
-            "refdoc",
-            "remark",
-            "attatchfile",
-            "pbarcode",
-            "trfno",
-            "pop",
-            "popno",
-          ],
-        },
-        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-      ],
+        include: [
+      {
+        model: ABHA,
+        as: "patientAbhas",
+        attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+      },
+      {
+        model: OPBill,
+        as: "patientBills",
+        attributes: [
+          "id",
+          "ptotal",
+          "pdisc_percentage",
+          "pdisc_amount",
+          "pamt_receivable",
+          "pamt_received_total",
+          "pamt_due",
+          "pamt_mode",
+          "pnote",
+          "billstatus",
+          "paymentDetails",
+          "invDetails",
+          "review_status",
+          "review_days",
+          "bill_date",
+        ],
+        order: [["id", "DESC"]],
+      },
+      {
+        model: PPPMode,
+        as: "patientPPModes",
+        attributes: [
+          "pscheme",
+          "refdoc",
+          "remark",
+          "attatchfile",
+          "pbarcode",
+          "trfno",
+          "pop",
+          "popno",
+        ],
+      },
+      {
+        model: PatientTest,
+        as: "patientTests",
+        where: { status: "center" }, // Filter by status
+        required: false, // Patients can exist without a current 'center' test
+        attributes: [
+          "id",
+          "status",
+          "rejection_reason",
+          "test_created_date",
+          "test_updated_date",
+          "test_result",
+          "test_image",
+        ],
+        include: [
+          {
+            model: Investigation,
+            as: "investigation",
+            // where: { test_collection: "No" }, // Filter investigations
+            attributes: [
+              "testname",
+              "testmethod",
+              "sampletype",
+              "test_collection",
+            ],
+            include: [
+              {
+                model: Department,
+                as: "department",
+                attributes: ["dptname"],
+              },
+              { model: Result, as: "results", attributes: ["unit"] },
+              {
+                model: DerivedTestComponent,
+                as: "components",
+                attributes: ["formula"],
+                include: [
+                  {
+                    model: Investigation,
+                    as: "childTest",
+                    attributes: ["testname"],
+                    include: [
+                      {
+                        model: Result,
+                        as: "results",
+                        attributes: ["unit"],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+    ],
     });
 
     if (!patient) {
