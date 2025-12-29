@@ -11,6 +11,7 @@ const {
   getTestData,
   searchBarcode,
   searchPatientBy,
+  getPatientByFlagFilters,
 } = require("../controller/patientControllers/getPatient");
 const {
   updatePatientInfo,
@@ -44,7 +45,7 @@ router.route("/ppp-patient-registration").post(addPPPPatientWithTest);
 router.route("/bill-patient-registartion").post(addPatientWithBillAndTest);
 
 // 3. Get Patient Data of a Hospital/Center
-router.route("/get-patient-data/:hospitalid").get(getPatient);
+router.route("/get-patient-data/:hospitalid").get(getPatientByFlagFilters);
 
 // 4. Get Patient By Id
 router.route("/get-patient/:patientid").get(getPatientById);

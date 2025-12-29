@@ -299,6 +299,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
               "testmethod",
               "sampletype",
               "test_collection",
+              "shortname"
             ],
             include: [
               {
