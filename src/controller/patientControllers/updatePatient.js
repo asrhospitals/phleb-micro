@@ -70,17 +70,12 @@ const updateCurrentBillData = async (req, res) => {
       });
     }
 
-    // if (now - billDate > oneDayInMs) {
-    //   if (transaction) await transaction.rollback();
-    //   return res.status(403).json({ message: "Update period expired (24h limit)." });
-    // }
 
     // 4. Clean the incoming data 
     // We destructure to ensure primary keys (id, pid) are never overwritten by req.body
     const { id, pid, ...updateData } = req.body;
 
     // 5. Apply changes and Save
-    // The fixed logic: update() handles both assigning data and saving in one go.
     await existingBill.update(updateData, { transaction });
 
     // 6. Commit and Return

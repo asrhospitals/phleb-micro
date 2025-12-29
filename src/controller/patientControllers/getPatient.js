@@ -22,61 +22,178 @@ const patientService = require("./patientService/patient.service");
  * @param {object} req - Express request object (contains user context, hospitalid param, and query data)
  * @param {object} res - Express response object
  */
-const getPatient = async (req, res) => {
+const getPatientByFlagFilters = async (req, res) => {
   try {
-    /* 1. Authorization & Hospital ID Validation */
-    const { roleType, hospitalid: userHospitalId } = req.user;
-    const paramHospitalId = parseInt(req.params.hospitalid);
-
-    if (
-      roleType?.toLowerCase() !== "reception" &&
-      roleType?.toLowerCase() !== "admin"
-    ) {
+    /* 1. Authorization */
+    const { roleType } = req.user;
+    if (roleType?.toLowerCase() !== "reception") {
       return res.status(403).json({
-        message:
-          "Access denied. Only receptions and admins can access this resource.",
+        message: "Access denied.",
       });
     }
 
-    let targetHospitalId;
+    /* 2. Pass Hospital Id */
 
-    if (roleType?.toLowerCase() === "admin") {
-      // Admins must provide the hospital ID in the URL params
-      if (!paramHospitalId) {
-        return res
-          .status(400)
-          .json({ message: "Hospital ID is required for admin" });
-      }
-      targetHospitalId = paramHospitalId;
-    } else {
-      // Non-admin users must only use their own hospital ID
-      if (paramHospitalId !== userHospitalId) {
-        return res.status(403).json({
-          message: "Access denied. Hospital ID mismatch.",
-        });
-      }
-      targetHospitalId = userHospitalId;
+    const { hospitalid } = req.params;
+
+    const hospital = await Hospital.findByPk(hospitalid);
+
+    if (!hospital) {
+      return res.status(404).json({ message: "Hospital Not Found" });
     }
 
-    /* 2. Execute Business Logic via Service Layer */
-    const result = await patientService.getPatientsByHospitalId(
-      targetHospitalId,
-      req.query
-    );
+    /* 3. Query Parameters */
+    const { q, startDate, endDate } = req.query;
 
-    /* 3. Respond to Client - Success */
+    /* 4. Pagination Details */
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+    let offset = (page - 1) * limit;
+
+    /* 5. Find Patients Matching the Query and the Hospital */
+    const whereClause = {
+      hospitalid: hospital.id,
+      p_regdate: {
+        [Op.between]: [startDate, endDate],
+      },
+    };
+
+    // Only add p_flag filter if 'q' is provided
+    if (q) {
+      whereClause.p_flag = q;
+    }
+
+    /* 5. Find Patients Matching the Query and the Hospital */
+    const { count, rows } = await Patient.findAndCountAll({
+      where: whereClause,
+
+      include: [
+        {
+          model: ABHA,
+          as: "patientAbhas",
+          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "id",
+            "ptotal",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
+            "pnote",
+            "billstatus",
+            "paymentDetails",
+            "invDetails",
+            "review_status",
+            "review_days",
+            "bill_date",
+          ],
+          order: [["id", "DESC"]],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+          ],
+        },
+        {
+          model: PatientTest,
+          as: "patientTests",
+          where: { status: "center" }, // Filter by status
+          required: false, // Patients can exist without a current 'center' test
+          attributes: [
+            "id",
+            "status",
+            "rejection_reason",
+            "test_created_date",
+            "test_updated_date",
+            "test_result",
+            "test_image",
+          ],
+          include: [
+            {
+              model: Investigation,
+              as: "investigation",
+              // where: { test_collection: "No" }, // Filter investigations
+              attributes: [
+                "testname",
+                "testmethod",
+                "sampletype",
+                "test_collection",
+                "shortname",
+              ],
+              include: [
+                {
+                  model: Department,
+                  as: "department",
+                  attributes: ["dptname"],
+                },
+                { model: Result, as: "results", attributes: ["unit"] },
+                {
+                  model: DerivedTestComponent,
+                  as: "components",
+                  attributes: ["formula"],
+                  include: [
+                    {
+                      model: Investigation,
+                      as: "childTest",
+                      attributes: ["testname"],
+                      include: [
+                        {
+                          model: Result,
+                          as: "results",
+                          attributes: ["unit"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      ],
+      limit: limit,
+      offset: offset,
+      order: [["id", "DESC"]],
+      distinct: true,
+      col: "id",
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    if (!rows) {
+      return res.status(404).json({
+        message: "No data available for the given hospital and date.",
+      });
+    }
+
     return res.status(200).json({
-      data: result.data,
+      data: rows,
       meta: {
-        totalItems: result.totalItems,
-        itemsPerPage: result.limit,
-        currentPage: result.page,
-        totalPages: result.totalPages,
+        totalItems: count,
+        itemsPerPage: limit,
+        currentPage: page,
+        totalPages: totalPages,
       },
     });
   } catch (error) {
     return res.status(500).json({
-      message: `Something went wrong while fetching patient ${error}`,
+      message: `Something went wrong while searching patients ${error}`,
     });
   }
 };
@@ -291,100 +408,6 @@ const searchPatient = async (req, res) => {
   }
 };
 
-// // 4. Get Patient By Mobile Number
-// const getPatientByMobile = async (req, res) => {
-//   try {
-//     /* 1. Authorization */
-//     const { roleType } = req.user;
-//     if (
-//       roleType?.toLowerCase() !== "reception" &&
-//       roleType?.toLowerCase() !== "admin"
-//     ) {
-//       return res.status(403).json({
-//         message:
-//           "Access denied. Only receptions and admins can access this resource.",
-//       });
-//     }
-
-//     /* 2. Query Parameters */
-//     const { phone } = req.query;
-//     const filters = {};
-
-//     if (phone) {
-//       filters["p_mobile"] = {
-//         [Op.iLike]: `%${phone}%`,
-//       };
-//     }
-
-//     /* Find Patients Matching the Query */
-//     const patients = await Patient.findAll({
-//       where: filters,
-//       include: [
-//         {
-//           model: ABHA,
-//           as: "patientAbhas",
-//           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-//         },
-//         {
-//           model: OPBill,
-//           as: "patientBills",
-//           attributes: [
-//             "ptotal",
-//             "pdisc_percentage",
-//             "pdisc_amount",
-//             "pamt_receivable",
-//             "pamt_received_total",
-//             "pamt_due",
-//             "pamt_mode",
-//             "pnote",
-//             "billstatus",
-//             "review_status",
-//             "review_days",
-//           ],
-//           include: [
-//             {
-//               model: OPPaymentDetail,
-//               as: "Payments",
-//               attributes: ["op_bill_id", "payment_method", "payment_amount"],
-//             },
-//           ],
-//         },
-//         {
-//           model: PPPMode,
-//           as: "patientPPModes",
-//           attributes: [
-//             "pscheme",
-//             "refdoc",
-//             "remark",
-//             "attatchfile",
-//             "pbarcode",
-//             "trfno",
-//             "pop",
-//             "popno",
-//           ],
-//         },
-//         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-//       ],
-//       order: [["id", "ASC"]],
-//     });
-
-//     const uniquePatients = [];
-//     const seenMobiles = new Set();
-
-//     for (const p of patients) {
-//       if (!seenMobiles.has(p.p_mobile)) {
-//         seenMobiles.add(p.p_mobile);
-//         uniquePatients.push(p);
-//       }
-//     }
-//     return res.status(200).json(uniquePatients);
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: `Something went wrong while searching patients ${error}`,
-//     });
-//   }
-// };
-
 // 5. Get Patient By Id
 const getPatientById = async (req, res) => {
   try {
@@ -407,105 +430,105 @@ const getPatientById = async (req, res) => {
     /* Find Patient By Id */
     const patient = await Patient.findOne({
       where: { id: patientid },
-        include: [
-      {
-        model: ABHA,
-        as: "patientAbhas",
-        attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-      },
-      {
-        model: OPBill,
-        as: "patientBills",
-        attributes: [
-          "id",
-          "ptotal",
-          "pdisc_percentage",
-          "pdisc_amount",
-          "pamt_receivable",
-          "pamt_received_total",
-          "pamt_due",
-          "pamt_mode",
-          "pnote",
-          "billstatus",
-          "paymentDetails",
-          "invDetails",
-          "review_status",
-          "review_days",
-          "bill_date",
-        ],
-        order: [["id", "DESC"]],
-      },
-      {
-        model: PPPMode,
-        as: "patientPPModes",
-        attributes: [
-          "pscheme",
-          "refdoc",
-          "remark",
-          "attatchfile",
-          "pbarcode",
-          "trfno",
-          "pop",
-          "popno",
-        ],
-      },
-      {
-        model: PatientTest,
-        as: "patientTests",
-        where: { status: "center" }, // Filter by status
-        required: false, // Patients can exist without a current 'center' test
-        attributes: [
-          "id",
-          "status",
-          "rejection_reason",
-          "test_created_date",
-          "test_updated_date",
-          "test_result",
-          "test_image",
-        ],
-        include: [
-          {
-            model: Investigation,
-            as: "investigation",
-            // where: { test_collection: "No" }, // Filter investigations
-            attributes: [
-              "testname",
-              "testmethod",
-              "sampletype",
-              "test_collection",
-            ],
-            include: [
-              {
-                model: Department,
-                as: "department",
-                attributes: ["dptname"],
-              },
-              { model: Result, as: "results", attributes: ["unit"] },
-              {
-                model: DerivedTestComponent,
-                as: "components",
-                attributes: ["formula"],
-                include: [
-                  {
-                    model: Investigation,
-                    as: "childTest",
-                    attributes: ["testname"],
-                    include: [
-                      {
-                        model: Result,
-                        as: "results",
-                        attributes: ["unit"],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      },
-      { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-    ],
+      include: [
+        {
+          model: ABHA,
+          as: "patientAbhas",
+          attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
+        },
+        {
+          model: OPBill,
+          as: "patientBills",
+          attributes: [
+            "id",
+            "ptotal",
+            "pdisc_percentage",
+            "pdisc_amount",
+            "pamt_receivable",
+            "pamt_received_total",
+            "pamt_due",
+            "pamt_mode",
+            "pnote",
+            "billstatus",
+            "paymentDetails",
+            "invDetails",
+            "review_status",
+            "review_days",
+            "bill_date",
+          ],
+          order: [["id", "DESC"]],
+        },
+        {
+          model: PPPMode,
+          as: "patientPPModes",
+          attributes: [
+            "pscheme",
+            "refdoc",
+            "remark",
+            "attatchfile",
+            "pbarcode",
+            "trfno",
+            "pop",
+            "popno",
+          ],
+        },
+        {
+          model: PatientTest,
+          as: "patientTests",
+          where: { status: "center" }, // Filter by status
+          required: false, // Patients can exist without a current 'center' test
+          attributes: [
+            "id",
+            "status",
+            "rejection_reason",
+            "test_created_date",
+            "test_updated_date",
+            "test_result",
+            "test_image",
+          ],
+          include: [
+            {
+              model: Investigation,
+              as: "investigation",
+              // where: { test_collection: "No" }, // Filter investigations
+              attributes: [
+                "testname",
+                "testmethod",
+                "sampletype",
+                "test_collection",
+              ],
+              include: [
+                {
+                  model: Department,
+                  as: "department",
+                  attributes: ["dptname"],
+                },
+                { model: Result, as: "results", attributes: ["unit"] },
+                {
+                  model: DerivedTestComponent,
+                  as: "components",
+                  attributes: ["formula"],
+                  include: [
+                    {
+                      model: Investigation,
+                      as: "childTest",
+                      attributes: ["testname"],
+                      include: [
+                        {
+                          model: Result,
+                          as: "results",
+                          attributes: ["unit"],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
+      ],
     });
 
     if (!patient) {
@@ -522,165 +545,13 @@ const getPatientById = async (req, res) => {
   }
 };
 
-// // 6. Search By Date and Hospital Id For Admin
-// const searchPatientBy = async (req, res) => {
-//   try {
-//     /* 1. Authorization */
-//     const { roleType } = req.user;
-//     if (roleType?.toLowerCase() !== "admin") {
-//       return res.status(403).json({
-//         message: "Access denied. Only admins can access this resource.",
-//       });
-//     }
-
-//     /* 2. Pass Hospital Id */
-
-//     const { hospitalid } = req.params;
-
-//     const hospital = await Hospital.findByPk(hospitalid);
-
-//     if (!hospital) {
-//       return res.status(404).json({ message: "Hospital Not Found" });
-//     }
-
-//     /* 3. Query Parameters */
-//     const { startDate, endDate } = req.query;
-
-//     /* 4. Pagination Details */
-//     let page = parseInt(req.query.page) || 1;
-//     let limit = parseInt(req.query.limit) || 10;
-//     let offset = (page - 1) * limit;
-
-//     /* 5. Find Patients Matching the Query and the Hospital */
-//     const { count, rows } = await Patient.findAndCountAll({
-//       where: {
-//         hospitalid: hospital.id,
-//         p_regdate: {
-//           [Op.between]: [startDate, endDate],
-//         },
-//       },
-
-//       attributes: [
-//         "id",
-//         "p_name",
-//         "p_age",
-//         "p_gender",
-//         "p_regdate",
-//         "p_lname",
-//         "p_mobile",
-//       ],
-//       include: [
-//         {
-//           model: ABHA,
-//           as: "patientAbhas",
-//           attributes: ["isaadhar", "ismobile", "aadhar", "mobile", "abha"],
-//         },
-//         {
-//           model: OPBill,
-//           as: "patientBills",
-//           attributes: [
-//             "ptotal",
-//             "pdisc_percentage",
-//             "pdisc_amount",
-//             "pamt_receivable",
-//             "pamt_received_total",
-//             "pamt_due",
-//             "pamt_mode",
-//             "pnote",
-//             "billstatus",
-//             "review_status",
-//             "review_days",
-//           ],
-//           include: [
-//             {
-//               model: OPPaymentDetail,
-//               as: "Payments",
-//               attributes: ["op_bill_id", "payment_method", "payment_amount"],
-//             },
-//           ],
-//         },
-//         {
-//           model: PPPMode,
-//           as: "patientPPModes",
-//           attributes: [
-//             "pscheme",
-//             "refdoc",
-//             "remark",
-//             "attatchfile",
-//             "pbarcode",
-//             "trfno",
-//             "pop",
-//             "popno",
-//           ],
-//         },
-//         {
-//           model: PatientTest,
-//           as: "patientTests",
-//           attributes: [
-//             "status",
-//             "rejection_reason",
-//             "test_created_date",
-//             "test_updated_date",
-//             "test_result",
-//             "test_image",
-//           ],
-//           include: [
-//             {
-//               model: Investigation,
-//               as: "investigation",
-//               attributes: ["testname", "testmethod", "sampletype"],
-//               include: [
-//                 {
-//                   model: Department,
-//                   as: "department",
-//                   attributes: ["dptname"],
-//                 },
-//                 { model: Result, as: "results", attributes: ["unit"] },
-//               ],
-//             },
-//           ],
-//         },
-//         { model: Hospital, as: "hospital", attributes: ["hospitalname"] },
-//       ],
-//       limit: limit,
-//       offset: offset,
-//       order: [["id", "ASC"]],
-//       distinct: true,
-//       col: "id",
-//     });
-
-//     const totalPages = Math.ceil(count / limit);
-
-//     if (!rows) {
-//       return res.status(404).json({
-//         message: "No data available for the given hospital and date.",
-//       });
-//     }
-
-//     return res.status(200).json({
-//       data: rows,
-//       meta: {
-//         totalItems: count,
-//         itemsPerPage: limit,
-//         currentPage: page,
-//         totalPages: totalPages,
-//       },
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       message: `Something went wrong while searching patients ${error}`,
-//     });
-//   }
-// };
-
-// 7. Search Barcode
+// 6. Search Barcode
 const searchBarcode = async (req, res) => {
   try {
     /* 1. Authorization */
     const { roleType } = req.user;
     if (
       roleType?.toLowerCase() !== "reception" &&
-
       roleType?.toLowerCase() !== "reception"
     ) {
       return res.status(403).json({
@@ -727,11 +598,9 @@ const searchBarcode = async (req, res) => {
 };
 
 module.exports = {
-  getPatient,
   searchPatient,
-  // getPatientByMobile,
   getPatientById,
   getTestData,
-  // searchPatientBy,
   searchBarcode,
+  getPatientByFlagFilters,
 };
