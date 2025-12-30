@@ -14,6 +14,7 @@ const {
   updatePatientDemographicInfo,
   updateCurrentBillData,
   updateQuickBillAndTestForGenPatient,
+  updateTestToExistingPatientWithin24Hours,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -73,5 +74,8 @@ router.route("/update-bills/:patientId/:billId").put(updateCurrentBillData);
 
 // 14. Update Test
 router.route("/quick-patient-test/:id").post(updateQuickBillAndTestForGenPatient);
+
+// 15. Update Test to existing Patient within 24 hours of registration
+router.route("/add-test-existing-patient/:id").post(updateTestToExistingPatientWithin24Hours);
 
 module.exports = router;
