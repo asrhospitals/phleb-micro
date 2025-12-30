@@ -24,6 +24,7 @@ const updatePatientDemographicInfo = async (req, res) => {
     }
 
     await patient.update(req.body, { transaction });
+    await transaction.commit();
     return res.status(200).json({ message: "Updated successfully" });
   } catch (error) {
     await transaction.rollback();
@@ -104,10 +105,15 @@ const updateQuickBillAndTestForGenPatient = async (req, res) => {
     const { id } = req.params;
 
     // 1. Verify Patient Existence
-    const getPatient = await Patient.findByPk(id, { transaction });
+    const getPatient = await Patient.findByPk(id, {
+      where: { p_flag: 0 },
+      transaction,
+    });
     if (!getPatient) {
       await transaction.rollback();
-      return res.status(404).json({ message: `Patient not found` });
+      return res
+        .status(404)
+        .json({ message: `Patient not found or not a general patient` });
     }
 
     // 2. Get Current Date in 'YYYY-MM-DD' format
@@ -216,8 +222,80 @@ const updateQuickBillAndTestForGenPatient = async (req, res) => {
   }
 };
 
+// 4. Add Test to existing Patient within 24 hours of registration
+const updateTestToExistingPatientWithin24Hours = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    // 1. Verify Patient Existence
+    const getPatient = await Patient.findByPk(id, { transaction });
+    if (!getPatient) {
+      await transaction.rollback();
+      return res.status(404).json({ message: `Patient not found` });
+    }
+    // 2. Check if within 24 hours of registration
+    const registrationDate = new Date(getPatient.p_regdate);
+    const currentDate = new Date();
+    const timeDifference = currentDate - registrationDate;
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+    if (hoursDifference > 24) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({
+          message: `Cannot add test. More than 24 hours since registration.`,
+        });
+    }
+    // 3. Add Tests
+    const { investigation_ids = [] } = req.body;
+
+    const existingTests = await PatientTest.findAll({
+      where: { pid: id },
+      transaction,
+    });
+
+    const existingInvestigationIds = existingTests.map(
+      (test) => test.investigation_id
+    );
+
+    // Check if all requested tests already exist
+    const allExist = investigation_ids.every((id) =>
+      existingInvestigationIds.includes(id)
+    );
+    if (allExist) {
+      return res
+        .status(400)
+        .json({ message: "Tests already exist for this patient." });
+    }
+
+    // Filter out already existing ones
+    const newInvestigationIds = investigation_ids.filter(
+      (id) => !existingInvestigationIds.includes(id)
+    );
+
+    if (newInvestigationIds.length > 0) {
+      const patienttests = newInvestigationIds.map((investigation_id) => ({
+        pid: id,
+        investigation_id,
+        hospitalid: req.user.hospitalid,
+        nodalid: req.user.nodalid,
+        status: "center",
+      }));
+      await PatientTest.bulkCreate(patienttests, { transaction });
+    }
+    // 4. Commit Transaction
+    await transaction.commit();
+    // 5. Return Success Response
+    return res.status(200).json({ message: "Tests added successfully" });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ message: `Something went wrong ${error}` });
+  }
+};
+
 module.exports = {
   updatePatientDemographicInfo,
   updateCurrentBillData,
   updateQuickBillAndTestForGenPatient,
+  updateTestToExistingPatientWithin24Hours,
 };
