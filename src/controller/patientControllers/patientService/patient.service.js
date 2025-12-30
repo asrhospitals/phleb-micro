@@ -640,6 +640,8 @@ async function createBillingRecords(pid, billData, transaction) {
     paymentDetails: billData.paymentDetails,
     invDetails: billData.invDetails,
     billstatus: billData.billstatus,
+    gstin: billData.gstin, // New field from image
+    bill_date: billData.bill_date || new Date(),
     review_status: billData.review_status, // New field from image
     review_days: billData.review_days, // New field from image
     pid: pid, // Link to the new Patient ID
