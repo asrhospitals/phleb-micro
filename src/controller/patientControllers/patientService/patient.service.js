@@ -12,7 +12,6 @@ const {
   DerivedTestComponent,
 } = require("../../../model/associationModels/associations");
 
-const InvDetail = require("../../../model/relationalModels/invDisc");
 const { generateRegId } = require("../../../utils/idGenerator");
 const sequelize = require("../../../db/dbConnection");
 const { Op } = require("sequelize");

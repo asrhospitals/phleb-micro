@@ -48,7 +48,10 @@ const OPBill = sequelize.define(
     },
     billstatus: {
       type: DataTypes.ENUM,
-      values: ["Paid", "Unpaid", "Due"],
+      values: ["Paid", "Unpaid", "Due","Cancelled"],
+    },
+    gstin: {
+      type: DataTypes.INTEGER,
     },
     paymentDetails: {
       type: DataTypes.JSONB,
@@ -76,7 +79,6 @@ const OPBill = sequelize.define(
       type: DataTypes.DATEONLY,
       defaultValue: DataTypes.NOW,
   },
-},
-);
+});
 
 module.exports = OPBill;

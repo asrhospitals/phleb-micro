@@ -11,7 +11,6 @@ const NormalValue = require("../relationalModels/normalValue");
 const Nodal = require("../relationalModels/nodalMaster");
 const ProfileInv = require("../relationalModels/profileInvMaster");
 const ProfileMaster = require("../relationalModels/profileMaster");
-const InvDetail = require("../relationalModels/invDisc");
 const DerivedTestComponent = require("../relationalModels/derivedTestModel");
 
 // Associations
@@ -28,9 +27,7 @@ OPBill.belongsTo(Patient, { foreignKey: "pid", as: "patient" });
 Patient.hasMany(PPPMode, { foreignKey: "pid", as: "patientPPModes" });
 PPPMode.belongsTo(Patient, { foreignKey: "pid", as: "patient" });
 
-// Opbill with Investigation
-// OPBill.hasMany(InvDetail, { foreignKey: "op_bill_id", as: "investigationDetails" });
-// InvDetail.belongsTo(OPBill, { foreignKey: "op_bill_id", as: "opBill" });
+
 
 // Patient ↔ ABHA
 Patient.hasMany(ABHA, { foreignKey: "pid", as: "patientAbhas" });
@@ -165,7 +162,6 @@ module.exports = {
   Nodal,
   ProfileInv,
   ProfileMaster,
-  InvDetail,
   DerivedTestComponent,
 };
 

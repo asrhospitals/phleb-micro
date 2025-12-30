@@ -4,22 +4,16 @@ const {
 } = require("../controller/patientControllers/updateTestStatus");
 
 const {
-  getPatient,
   searchPatient,
-  getPatientByMobile,
   getPatientById,
   getTestData,
   searchBarcode,
-  searchPatientBy,
   getPatientByFlagFilters,
 } = require("../controller/patientControllers/getPatient");
 const {
-  updatePatientInfo,
-  updateBillData,
-  updatePatientTestData,
   updatePatientDemographicInfo,
   updateCurrentBillData,
-  updateQuickBillAndTestForExistingPatient,
+  updateQuickBillAndTestForGenPatient,
 } = require("../controller/patientControllers/updatePatient");
 const { searchTest } = require("../controller/patientControllers/getTestCode");
 
@@ -78,6 +72,6 @@ router.route("/search-code").get(searchBarcode);
 router.route("/update-bills/:patientId/:billId").put(updateCurrentBillData);
 
 // 14. Update Test
-router.route("/update-patient-test/:id").put(updateQuickBillAndTestForExistingPatient);
+router.route("/quick-patient-test/:id").post(updateQuickBillAndTestForGenPatient);
 
 module.exports = router;
