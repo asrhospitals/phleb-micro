@@ -251,6 +251,7 @@ async function getPatientsByHospitalId(targetHospitalId, queryParams) {
           "pamt_due",
           "pamt_mode",
           "pnote",
+          "gstin",
           "billstatus",
           "paymentDetails",
           "invDetails",
