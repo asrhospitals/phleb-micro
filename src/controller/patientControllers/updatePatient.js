@@ -54,24 +54,24 @@ const updateCurrentBillData = async (req, res) => {
     }
 
     /**
-     * Logic Change: 
+     * Logic Change:
      * If bill_status is 'due', the user can update regardless of time.
      * Otherwise (e.g., 'paid', 'cancelled'), apply the 24-hour limit.
      */
-    const isDue = existingBill.billstatus === 'Due';
+    const isDue = existingBill.billstatus === "Due";
     const billDate = new Date(existingBill.bill_date).getTime();
     const now = Date.now();
     const oneDayInMs = 24 * 60 * 60 * 1000;
 
-    if (!isDue && (now - billDate > oneDayInMs)) {
+    if (!isDue && now - billDate > oneDayInMs) {
       if (transaction) await transaction.rollback();
-      return res.status(403).json({ 
-        message: "Update period expired. Only 'due' bills can be updated after 24 hours." 
+      return res.status(403).json({
+        message:
+          "Update period expired. Only 'due' bills can be updated after 24 hours.",
       });
     }
 
-
-    // 4. Clean the incoming data 
+    // 4. Clean the incoming data
     // We destructure to ensure primary keys (id, pid) are never overwritten by req.body
     const { id, pid, ...updateData } = req.body;
 
@@ -83,15 +83,13 @@ const updateCurrentBillData = async (req, res) => {
 
     return res.status(200).json({
       message: "Bill updated successfully",
-     
     });
-
   } catch (err) {
     // 7. Robust Error Handling
     if (transaction) await transaction.rollback();
-    
+
     console.error("Critical Update Error:", err);
-    
+
     return res.status(500).json({
       message: "Internal server error",
       error: err.message,
@@ -99,14 +97,14 @@ const updateCurrentBillData = async (req, res) => {
   }
 };
 
-// 3. Add bill and test for existing patient if the patient is already registered
-const updateQuickBillAndTestForExistingPatient = async (req, res) => {
+// 3. Add bill and test for existing patient if the patient is already registered as general patient
+const updateQuickBillAndTestForGenPatient = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { patientId } = req.params;
+    const { id } = req.params;
 
     // 1. Verify Patient Existence
-    const getPatient = await Patient.findByPk(patientId, { transaction });
+    const getPatient = await Patient.findByPk(id, { transaction });
     if (!getPatient) {
       await transaction.rollback();
       return res.status(404).json({ message: `Patient not found` });
@@ -121,7 +119,7 @@ const updateQuickBillAndTestForExistingPatient = async (req, res) => {
     // If yes then they cannot use this route.
     // If Bill Is 24hour old allow them to use this route
     const existingBill = await OPBill.findOne({
-      where: { pid: patientId, bill_date: currentDate },
+      where: { pid: id, bill_date: currentDate },
       transaction,
     });
     if (existingBill) {
@@ -134,7 +132,7 @@ const updateQuickBillAndTestForExistingPatient = async (req, res) => {
     // If yes then they cannot use this route.
     // If the test is 24hour old allow them to use this route
     const existingTest = await PatientTest.findOne({
-      where: { pid: patientId, test_created_date: currentDate },
+      where: { pid: id, test_created_date: currentDate },
       transaction,
     });
     if (existingTest) {
@@ -147,20 +145,70 @@ const updateQuickBillAndTestForExistingPatient = async (req, res) => {
     // 3. Update Patient Data with investigation_ids:[],opBill:[],ppTest:[]
     const {
       p_regdate,
-      p_regtime,
+      p_reg_time,
       investigation_ids = [],
       opbill = [],
       pptest = [],
+      p_flag,
     } = req.body;
     // 4. Update Patient Record
     await Patient.update(
-      { p_regdate, p_regtime, investigation_ids, opbill, pptest },
       {
-        where: { id: patientId },
+        p_regdate,
+        p_reg_time,
+        p_flag,
+      },
+      {
+        where: { id: id },
         transaction,
       }
     );
+    // 5. Create Investigation Records
 
+    const bulkOperations = [];
+
+    if (investigation_ids.length > 0) {
+      const patienttests = investigation_ids.map((investigation_id) => ({
+        pid: id,
+        investigation_id,
+        hospitalid: req.user.hospitalid,
+        nodalid: req.user.nodalid,
+        status: "center",
+      }));
+      bulkOperations.push(
+        PatientTest.bulkCreate(patienttests, { transaction })
+      );
+    }
+
+    // 6. Create OP Bill Records
+    if (opbill.length > 0) {
+      // If opbill is an array of bills, use bulkCreate
+      await OPBill.bulkCreate(
+        opbill.map((bill) => ({
+          ...bill,
+          pid: id,
+          bill_date: currentDate,
+        })),
+        { transaction }
+      );
+    }
+
+    // 7. Create PPP Test Records
+    if (pptest.length > 0) {
+      await PPPMode.bulkCreate(
+        pptest.map((test) => ({
+          ...test,
+          pid: id,
+          created_date: currentDate,
+        })),
+        { transaction }
+      );
+    }
+
+    // 8. Commit Transaction
+    await transaction.commit();
+
+    // 9. Return Success Response
     return res.status(200).json({ message: "Patient updated successfully" });
   } catch (error) {
     await transaction.rollback();
@@ -168,9 +216,8 @@ const updateQuickBillAndTestForExistingPatient = async (req, res) => {
   }
 };
 
-
 module.exports = {
   updatePatientDemographicInfo,
   updateCurrentBillData,
-  updateQuickBillAndTestForExistingPatient,
+  updateQuickBillAndTestForGenPatient,
 };

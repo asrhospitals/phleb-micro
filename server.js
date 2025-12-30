@@ -101,7 +101,7 @@ app.use((err, req, res, next) => {
 const startServer = async () => {
   try {
     await sequelize.authenticate();
-    //  await sequelize.sync({ alter: true });
+    //  await sequelize.sync();
     console.log("✅ Database connection established.");
 
     // Avoid .sync() in production; use migrations instead
